@@ -457,7 +457,7 @@ def generate_blind_test_samples(text: str, providers: List[str]):
             )
             return result
             
-        except Exception as e:
+            except Exception as e:
             st.error(f"Error testing provider: {str(e)}")
             return None
     
@@ -732,15 +732,15 @@ def prepare_test_dataset(sample_count: int, categories: List[str], lengths: List
     with st.spinner("Preparing test dataset..."):
         final_samples = []
         
-        # Generate new samples
-        all_samples = st.session_state.dataset_generator.generate_dataset(sample_count * 2)
-        
-        # Filter samples
-        for sample in all_samples:
-            if (sample.category in categories and 
-                sample.length_category in lengths and 
-                len(final_samples) < sample_count):
-                final_samples.append(sample)
+            # Generate new samples
+            all_samples = st.session_state.dataset_generator.generate_dataset(sample_count * 2)
+            
+            # Filter samples
+            for sample in all_samples:
+                if (sample.category in categories and 
+                    sample.length_category in lengths and 
+                    len(final_samples) < sample_count):
+                    final_samples.append(sample)
         
         st.session_state.test_samples = final_samples
     

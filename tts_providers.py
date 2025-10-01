@@ -449,6 +449,123 @@ class DeepgramTTSProvider(TTSProvider):
         """Get available Deepgram voices"""
         return self.config.supported_voices
 
+class ElevenLabsTTSProvider(TTSProvider):
+    """ElevenLabs TTS provider implementation"""
+    
+    def __init__(self):
+        super().__init__("elevenlabs")
+        # Map friendly voice names to voice IDs
+        self.voice_id_map = {
+            "Rachel": "21m00Tcm4TlvDq8ikWAM",
+            "Domi": "AZnzlk1XvdvUeBnXmlld",
+            "Bella": "EXAVITQu4vr4xnSDxMaL",
+            "Antoni": "ErXwobaYiN019PkySvjV",
+            "Elli": "MF3mGyEYCl7XYWbV9V6O",
+            "Josh": "TxGEqnHWrfWFTfGW9XjX",
+            "Arnold": "VR6AewLTigWG4xSOukaG",
+            "Adam": "pNInz6obpgDQGcFmaJgB",
+            "Sam": "yoZ06aMxZJJ28mfd3POQ"
+        }
+    
+    async def generate_speech(self, request: TTSRequest) -> TTSResult:
+        """Generate speech using ElevenLabs TTS API"""
+        start_time = time.time()
+        
+        # Validate request
+        is_valid, error_msg = self.validate_request(request)
+        if not is_valid:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=0,
+                file_size_bytes=0,
+                error_message=error_msg,
+                metadata={}
+            )
+        
+        # Get voice ID from friendly name
+        voice_id = self.voice_id_map.get(request.voice, request.voice)
+        
+        headers = {
+            "xi-api-key": self.api_key,
+            "Content-Type": "application/json"
+        }
+        
+        # ElevenLabs API payload structure
+        payload = {
+            "text": request.text,
+            "model_id": "eleven_multilingual_v2",
+            "voice_settings": {
+                "stability": 0.5,
+                "similarity_boost": 0.75
+            }
+        }
+        
+        # Build URL with voice ID
+        url = f"{self.config.base_url}/{voice_id}"
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url,
+                    headers=headers,
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
+                    end_time = time.time()
+                    latency_ms = (end_time - start_time) * 1000
+                    
+                    if response.status == 200:
+                        # ElevenLabs returns audio data directly
+                        audio_data = await response.read()
+                        return TTSResult(
+                            success=True,
+                            audio_data=audio_data,
+                            latency_ms=latency_ms,
+                            file_size_bytes=len(audio_data),
+                            error_message=None,
+                            metadata={
+                                "voice": request.voice,
+                                "voice_id": voice_id,
+                                "model": "eleven_multilingual_v2",
+                                "provider": self.provider_id,
+                                "format": "mp3_44100_128"
+                            }
+                        )
+                    else:
+                        error_text = await response.text()
+                        return TTSResult(
+                            success=False,
+                            audio_data=None,
+                            latency_ms=latency_ms,
+                            file_size_bytes=0,
+                            error_message=f"API Error {response.status}: {error_text}",
+                            metadata={"provider": self.provider_id}
+                        )
+        
+        except asyncio.TimeoutError:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=(time.time() - start_time) * 1000,
+                file_size_bytes=0,
+                error_message="Request timeout",
+                metadata={"provider": self.provider_id}
+            )
+        except Exception as e:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=(time.time() - start_time) * 1000,
+                file_size_bytes=0,
+                error_message=f"Error: {str(e)}",
+                metadata={"provider": self.provider_id}
+            )
+    
+    def get_available_voices(self) -> list:
+        """Get available ElevenLabs voices"""
+        return self.config.supported_voices
+
 class TTSProviderFactory:
     """Factory for creating TTS providers"""
     
@@ -459,6 +576,8 @@ class TTSProviderFactory:
             return MurfAITTSProvider()
         elif provider_id == "deepgram":
             return DeepgramTTSProvider()
+        elif provider_id == "elevenlabs":
+            return ElevenLabsTTSProvider()
         else:
             raise ValueError(f"Unknown provider: {provider_id}")
     
