@@ -4,7 +4,6 @@ Geolocation utilities for tracking test locations
 import requests
 from typing import Dict, Optional
 import json
-import streamlit as st
 
 class GeolocationService:
     """Service to get geolocation information"""
@@ -12,104 +11,83 @@ class GeolocationService:
     def __init__(self):
         self.cache = {}
     
-    def _get_client_ip(self) -> Optional[str]:
-        """
-        Try to get the client's real IP address from Streamlit headers.
-        This works when deployed on Streamlit Cloud.
-        """
-        try:
-            # Try to get from Streamlit context (when deployed)
-            from streamlit.runtime.scriptrunner import get_script_run_ctx
-            ctx = get_script_run_ctx()
-            if ctx and hasattr(ctx, 'session_id'):
-                # Try to get session info
-                session_info = st.runtime.get_instance()._session_mgr.get_session_info(ctx.session_id)
-                if session_info and hasattr(session_info, 'client'):
-                    return session_info.client.request.remote_ip
-        except:
-            pass
-        
-        # Fallback: check if we're running locally or on server
-        # When on Streamlit Cloud, the headers might have X-Forwarded-For
-        try:
-            import streamlit.web.server.websocket_headers as wsh
-            headers = wsh.get_websocket_headers()
-            if headers and 'X-Forwarded-For' in headers:
-                return headers['X-Forwarded-For'].split(',')[0].strip()
-        except:
-            pass
-        
-        return None
-    
     def get_location(self, force_refresh: bool = False) -> Dict[str, str]:
         """
-        Get current geolocation based on client IP address
-        Uses ipapi.co for geolocation (free, no API key needed)
+        Get current geolocation based on IP address.
+        This will detect the server location when deployed on Streamlit Cloud.
         """
         
         # Check cache first (unless forced refresh)
         if not force_refresh and 'location' in self.cache:
             return self.cache['location']
         
-        # Try to get client IP first
-        client_ip = self._get_client_ip()
+        # Try multiple geolocation services in order
+        location = None
         
+        # Service 1: ipapi.co (reliable, no key needed)
         try:
-            # If we have client IP, use it. Otherwise, ipapi.co will use the requester's IP
-            if client_ip:
-                response = requests.get(f'https://ipapi.co/{client_ip}/json/', timeout=3)
-            else:
-                # This will get server IP when running on Streamlit Cloud without client IP
-                response = requests.get('https://ipapi.co/json/', timeout=3)
-            
+            response = requests.get('https://ipapi.co/json/', timeout=5)
             if response.status_code == 200:
                 data = response.json()
-                
-                location = {
-                    'country': data.get('country_name', 'Unknown'),
-                    'country_code': data.get('country_code', 'XX'),
-                    'region': data.get('region', 'Unknown'),
-                    'city': data.get('city', 'Unknown'),
-                    'latitude': str(data.get('latitude', 0)),
-                    'longitude': str(data.get('longitude', 0)),
-                    'timezone': data.get('timezone', 'UTC'),
-                    'ip': data.get('ip', 'Unknown')
-                }
-                
-                # Cache the result
-                self.cache['location'] = location
-                return location
-        
+                if data.get('country_name') and data.get('country_name') != 'Unknown':
+                    location = {
+                        'country': data.get('country_name', 'Unknown'),
+                        'country_code': data.get('country_code', 'XX'),
+                        'region': data.get('region', 'Unknown'),
+                        'city': data.get('city', 'Unknown'),
+                        'latitude': str(data.get('latitude', 0)),
+                        'longitude': str(data.get('longitude', 0)),
+                        'timezone': data.get('timezone', 'UTC'),
+                        'ip': data.get('ip', 'Unknown')
+                    }
+                    self.cache['location'] = location
+                    return location
         except Exception as e:
-            print(f"Primary geolocation service failed: {e}")
+            print(f"ipapi.co failed: {e}")
         
-        # Fallback to ip-api.com (free, no API key)
+        # Service 2: ip-api.com (backup, free)
         try:
-            if client_ip:
-                response = requests.get(f'http://ip-api.com/json/{client_ip}', timeout=3)
-            else:
-                response = requests.get('http://ip-api.com/json/', timeout=3)
-            
+            response = requests.get('http://ip-api.com/json/', timeout=5)
             if response.status_code == 200:
                 data = response.json()
-                
-                location = {
-                    'country': data.get('country', 'Unknown'),
-                    'country_code': data.get('countryCode', 'XX'),
-                    'region': data.get('regionName', 'Unknown'),
-                    'city': data.get('city', 'Unknown'),
-                    'latitude': str(data.get('lat', 0)),
-                    'longitude': str(data.get('lon', 0)),
-                    'timezone': data.get('timezone', 'UTC'),
-                    'ip': data.get('query', 'Unknown')
-                }
-                
-                # Cache the result
-                self.cache['location'] = location
-                return location
-        
+                if data.get('status') == 'success' and data.get('country'):
+                    location = {
+                        'country': data.get('country', 'Unknown'),
+                        'country_code': data.get('countryCode', 'XX'),
+                        'region': data.get('regionName', 'Unknown'),
+                        'city': data.get('city', 'Unknown'),
+                        'latitude': str(data.get('lat', 0)),
+                        'longitude': str(data.get('lon', 0)),
+                        'timezone': data.get('timezone', 'UTC'),
+                        'ip': data.get('query', 'Unknown')
+                    }
+                    self.cache['location'] = location
+                    return location
         except Exception as e:
-            print(f"Fallback geolocation service failed: {e}")
+            print(f"ip-api.com failed: {e}")
+        
+        # Service 3: ipinfo.io (another backup)
+        try:
+            response = requests.get('https://ipinfo.io/json', timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('country'):
+                    # Parse location string like "37.7749,-122.4194"
+                    loc_parts = data.get('loc', '0,0').split(',')
+                    location = {
+                        'country': data.get('country', 'Unknown'),
+                        'country_code': data.get('country', 'XX'),
+                        'region': data.get('region', 'Unknown'),
+                        'city': data.get('city', 'Unknown'),
+                        'latitude': loc_parts[0] if len(loc_parts) > 0 else '0',
+                        'longitude': loc_parts[1] if len(loc_parts) > 1 else '0',
+                        'timezone': data.get('timezone', 'UTC'),
+                        'ip': data.get('ip', 'Unknown')
+                    }
+                    self.cache['location'] = location
+                    return location
+        except Exception as e:
+            print(f"ipinfo.io failed: {e}")
         
         # Return default if all services fail
         return {
