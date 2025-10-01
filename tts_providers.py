@@ -1,0 +1,479 @@
+"""
+TTS Provider implementations for benchmarking
+"""
+import time
+import asyncio
+import aiohttp
+import requests
+from typing import Dict, Any, Optional, Tuple, AsyncGenerator
+from dataclasses import dataclass
+from abc import ABC, abstractmethod
+import io
+import json
+from config import get_api_key, TTS_PROVIDERS
+
+@dataclass
+class TTSResult:
+    """Result from TTS generation"""
+    success: bool
+    audio_data: Optional[bytes]
+    latency_ms: float
+    file_size_bytes: int
+    error_message: Optional[str]
+    metadata: Dict[str, Any]
+
+@dataclass
+class TTSRequest:
+    """TTS generation request"""
+    text: str
+    voice: str
+    provider: str
+    model: Optional[str] = None
+    speed: float = 1.0
+    format: str = "mp3"
+
+class TTSProvider(ABC):
+    """Abstract base class for TTS providers"""
+    
+    def __init__(self, provider_id: str):
+        self.provider_id = provider_id
+        self.config = TTS_PROVIDERS[provider_id]
+        self.api_key = get_api_key(provider_id)
+    
+    @abstractmethod
+    async def generate_speech(self, request: TTSRequest) -> TTSResult:
+        """Generate speech from text"""
+        pass
+    
+    @abstractmethod
+    def get_available_voices(self) -> list:
+        """Get list of available voices"""
+        pass
+    
+    def validate_request(self, request: TTSRequest) -> Tuple[bool, str]:
+        """Validate TTS request"""
+        if len(request.text) > self.config.max_chars:
+            return False, f"Text exceeds maximum length of {self.config.max_chars} characters"
+        
+        if request.voice not in self.config.supported_voices:
+            return False, f"Voice '{request.voice}' not supported. Available: {self.config.supported_voices}"
+        
+        return True, ""
+
+class MurfAITTSProvider(TTSProvider):
+    """Murf AI TTS provider implementation"""
+    
+    def __init__(self):
+        super().__init__("murf")
+    
+    async def generate_speech(self, request: TTSRequest) -> TTSResult:
+        """Generate speech using Murf AI API"""
+        start_time = time.time()
+        
+        # Validate request
+        is_valid, error_msg = self.validate_request(request)
+        if not is_valid:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=0,
+                file_size_bytes=0,
+                error_message=error_msg,
+                metadata={}
+            )
+        
+        headers = {
+            "api-key": self.api_key,
+            "Content-Type": "application/json"
+        }
+        
+        # Murf AI API payload structure
+        payload = {
+            "text": request.text,
+            "voiceId": request.voice,
+            "audioFormat": request.format or "mp3"
+        }
+        
+        # Add speed/rate if specified
+        if request.speed and request.speed != 1.0:
+            payload["rate"] = request.speed
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    self.config.base_url,
+                    headers=headers,
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
+                    end_time = time.time()
+                    latency_ms = (end_time - start_time) * 1000
+                    
+                    if response.status == 200:
+                        # Check content type to determine response format
+                        content_type = response.headers.get('content-type', '').lower()
+                        
+                        if 'application/json' in content_type:
+                            # JSON response - might contain audio URL or data
+                            response_data = await response.json()
+                            
+                            if "audioFile" in response_data:
+                                # Murf AI returns audio URL in audioFile field
+                                audio_url = response_data["audioFile"]
+                                async with session.get(audio_url) as audio_response:
+                                    if audio_response.status == 200:
+                                        audio_data = await audio_response.read()
+                                        return TTSResult(
+                                            success=True,
+                                            audio_data=audio_data,
+                                            latency_ms=latency_ms,
+                                            file_size_bytes=len(audio_data),
+                                            error_message=None,
+                                            metadata={
+                                                "voice": request.voice,
+                                                "speed": request.speed,
+                                                "format": request.format,
+                                                "provider": self.provider_id,
+                                                "audio_url": audio_url
+                                            }
+                                        )
+                                    else:
+                                        return TTSResult(
+                                            success=False,
+                                            audio_data=None,
+                                            latency_ms=latency_ms,
+                                            file_size_bytes=0,
+                                            error_message=f"Failed to download audio from URL: {audio_response.status}",
+                                            metadata={"provider": self.provider_id}
+                                        )
+                            elif "audio" in response_data:
+                                # Base64 encoded audio data
+                                import base64
+                                audio_data = base64.b64decode(response_data["audio"])
+                                return TTSResult(
+                                    success=True,
+                                    audio_data=audio_data,
+                                    latency_ms=latency_ms,
+                                    file_size_bytes=len(audio_data),
+                                    error_message=None,
+                                    metadata={
+                                        "voice": request.voice,
+                                        "speed": request.speed,
+                                        "format": request.format,
+                                        "provider": self.provider_id
+                                    }
+                                )
+                            else:
+                                return TTSResult(
+                                    success=False,
+                                    audio_data=None,
+                                    latency_ms=latency_ms,
+                                    file_size_bytes=0,
+                                    error_message=f"Unexpected JSON response format: {list(response_data.keys())}",
+                                    metadata={"provider": self.provider_id, "response": response_data}
+                                )
+                        else:
+                            # Direct audio data response
+                            audio_data = await response.read()
+                            return TTSResult(
+                                success=True,
+                                audio_data=audio_data,
+                                latency_ms=latency_ms,
+                                file_size_bytes=len(audio_data),
+                                error_message=None,
+                                metadata={
+                                    "voice": request.voice,
+                                    "speed": request.speed,
+                                    "format": request.format,
+                                    "provider": self.provider_id,
+                                    "content_type": content_type
+                                }
+                            )
+                    else:
+                        error_text = await response.text()
+                        return TTSResult(
+                            success=False,
+                            audio_data=None,
+                            latency_ms=latency_ms,
+                            file_size_bytes=0,
+                            error_message=f"API Error {response.status}: {error_text}",
+                            metadata={"provider": self.provider_id}
+                        )
+        
+        except asyncio.TimeoutError:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=(time.time() - start_time) * 1000,
+                file_size_bytes=0,
+                error_message="Request timeout",
+                metadata={"provider": self.provider_id}
+            )
+        except Exception as e:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=(time.time() - start_time) * 1000,
+                file_size_bytes=0,
+                error_message=f"Error: {str(e)}",
+                metadata={"provider": self.provider_id}
+            )
+    
+    def get_available_voices(self) -> list:
+        """Get available Murf AI voices"""
+        return self.config.supported_voices
+
+class GeminiTTSProvider(TTSProvider):
+    """Google Gemini TTS provider implementation"""
+    
+    def __init__(self):
+        super().__init__("gemini")
+    
+    async def generate_speech(self, request: TTSRequest) -> TTSResult:
+        """Generate speech using Google Gemini TTS API"""
+        start_time = time.time()
+        
+        # Validate request
+        is_valid, error_msg = self.validate_request(request)
+        if not is_valid:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=0,
+                file_size_bytes=0,
+                error_message=error_msg,
+                metadata={}
+            )
+        
+        headers = {
+            "Content-Type": "application/json"
+        }
+        
+        # Google Cloud TTS API payload structure
+        payload = {
+            "input": {"text": request.text},
+            "voice": {
+                "languageCode": "en-US",
+                "name": request.voice,
+                "ssmlGender": "NEUTRAL"
+            },
+            "audioConfig": {
+                "audioEncoding": "MP3" if request.format == "mp3" else "LINEAR16",
+                "speakingRate": request.speed or 1.0
+            }
+        }
+        
+        # Add API key to URL
+        url_with_key = f"{self.config.base_url}?key={self.api_key}"
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url_with_key,
+                    headers=headers,
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
+                    end_time = time.time()
+                    latency_ms = (end_time - start_time) * 1000
+                    
+                    if response.status == 200:
+                        response_data = await response.json()
+                        
+                        if "audioContent" in response_data:
+                            # Decode base64 audio content
+                            import base64
+                            audio_data = base64.b64decode(response_data["audioContent"])
+                            return TTSResult(
+                                success=True,
+                                audio_data=audio_data,
+                                latency_ms=latency_ms,
+                                file_size_bytes=len(audio_data),
+                                error_message=None,
+                                metadata={
+                                    "voice": request.voice,
+                                    "speed": request.speed,
+                                    "format": request.format,
+                                    "provider": self.provider_id,
+                                    "language_code": "en-US"
+                                }
+                            )
+                        else:
+                            return TTSResult(
+                                success=False,
+                                audio_data=None,
+                                latency_ms=latency_ms,
+                                file_size_bytes=0,
+                                error_message=f"Unexpected response format: {list(response_data.keys())}",
+                                metadata={"provider": self.provider_id, "response": response_data}
+                            )
+                    else:
+                        error_text = await response.text()
+                        return TTSResult(
+                            success=False,
+                            audio_data=None,
+                            latency_ms=latency_ms,
+                            file_size_bytes=0,
+                            error_message=f"API Error {response.status}: {error_text}",
+                            metadata={"provider": self.provider_id}
+                        )
+        
+        except asyncio.TimeoutError:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=(time.time() - start_time) * 1000,
+                file_size_bytes=0,
+                error_message="Request timeout",
+                metadata={"provider": self.provider_id}
+            )
+        except Exception as e:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=(time.time() - start_time) * 1000,
+                file_size_bytes=0,
+                error_message=f"Error: {str(e)}",
+                metadata={"provider": self.provider_id}
+            )
+    
+    def get_available_voices(self) -> list:
+        """Get available Gemini voices"""
+        return self.config.supported_voices
+
+class DeepgramTTSProvider(TTSProvider):
+    """Deepgram TTS provider implementation"""
+    
+    def __init__(self):
+        super().__init__("deepgram")
+    
+    async def generate_speech(self, request: TTSRequest) -> TTSResult:
+        """Generate speech using Deepgram TTS API"""
+        start_time = time.time()
+        
+        # Validate request
+        is_valid, error_msg = self.validate_request(request)
+        if not is_valid:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=0,
+                file_size_bytes=0,
+                error_message=error_msg,
+                metadata={}
+            )
+        
+        headers = {
+            "Authorization": f"Token {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        # Deepgram TTS API payload structure
+        payload = {
+            "text": request.text
+        }
+        
+        # Add query parameters to URL
+        params = {
+            "model": request.voice,
+            "encoding": "mp3" if request.format == "mp3" else "linear16"
+        }
+        
+        # Only add sample_rate for non-MP3 formats
+        if request.format != "mp3":
+            params["sample_rate"] = "24000"
+        
+        # Build URL with parameters
+        url_with_params = f"{self.config.base_url}?" + "&".join([f"{k}={v}" for k, v in params.items()])
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url_with_params,
+                    headers=headers,
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
+                    end_time = time.time()
+                    latency_ms = (end_time - start_time) * 1000
+                    
+                    if response.status == 200:
+                        # Deepgram returns audio data directly
+                        audio_data = await response.read()
+                        return TTSResult(
+                            success=True,
+                            audio_data=audio_data,
+                            latency_ms=latency_ms,
+                            file_size_bytes=len(audio_data),
+                            error_message=None,
+                            metadata={
+                                "voice": request.voice,
+                                "speed": request.speed,
+                                "format": request.format,
+                                "provider": self.provider_id,
+                                "model": request.voice,
+                                "sample_rate": 24000
+                            }
+                        )
+                    else:
+                        error_text = await response.text()
+                        return TTSResult(
+                            success=False,
+                            audio_data=None,
+                            latency_ms=latency_ms,
+                            file_size_bytes=0,
+                            error_message=f"API Error {response.status}: {error_text}",
+                            metadata={"provider": self.provider_id}
+                        )
+        
+        except asyncio.TimeoutError:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=(time.time() - start_time) * 1000,
+                file_size_bytes=0,
+                error_message="Request timeout",
+                metadata={"provider": self.provider_id}
+            )
+        except Exception as e:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=(time.time() - start_time) * 1000,
+                file_size_bytes=0,
+                error_message=f"Error: {str(e)}",
+                metadata={"provider": self.provider_id}
+            )
+    
+    def get_available_voices(self) -> list:
+        """Get available Deepgram voices"""
+        return self.config.supported_voices
+
+class TTSProviderFactory:
+    """Factory for creating TTS providers"""
+    
+    @staticmethod
+    def create_provider(provider_id: str) -> TTSProvider:
+        """Create a TTS provider instance"""
+        if provider_id == "murf":
+            return MurfAITTSProvider()
+        elif provider_id == "deepgram":
+            return DeepgramTTSProvider()
+        else:
+            raise ValueError(f"Unknown provider: {provider_id}")
+    
+    @staticmethod
+    def get_available_providers() -> list:
+        """Get list of available provider IDs"""
+        return list(TTS_PROVIDERS.keys())
+    
+    @staticmethod
+    def create_all_providers() -> Dict[str, TTSProvider]:
+        """Create instances of all available providers"""
+        providers = {}
+        for provider_id in TTSProviderFactory.get_available_providers():
+            try:
+                providers[provider_id] = TTSProviderFactory.create_provider(provider_id)
+            except Exception as e:
+                print(f"Failed to create provider {provider_id}: {e}")
+        return providers

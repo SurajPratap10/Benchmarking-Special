@@ -1,0 +1,42 @@
+[
+  {
+    "id": "upload_001",
+    "text": "This is a sample text file for demonstration.",
+    "word_count": 8,
+    "category": "uploaded",
+    "length_category": "short",
+    "complexity_score": 0
+  },
+  {
+    "id": "upload_002",
+    "text": "It contains multiple lines of text that can be used for TTS benchmarking.",
+    "word_count": 13,
+    "category": "uploaded",
+    "length_category": "short",
+    "complexity_score": 0
+  },
+  {
+    "id": "upload_003",
+    "text": "The text parser can extract meaningful sentences from various file formats.",
+    "word_count": 11,
+    "category": "uploaded",
+    "length_category": "short",
+    "complexity_score": 0.025393939393939403
+  },
+  {
+    "id": "upload_004",
+    "text": "Each line becomes a potential test sample for the benchmarking system.",
+    "word_count": 11,
+    "category": "technical",
+    "length_category": "short",
+    "complexity_score": 0.00740259740259739
+  },
+  {
+    "id": "upload_005",
+    "text": "This demonstrates how users can upload their own content for testing.",
+    "word_count": 11,
+    "category": "uploaded",
+    "length_category": "short",
+    "complexity_score": 0.0038076416337285684
+  }
+]
