@@ -30,6 +30,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Fetch user's location (client-side) - runs once in browser
+if "user_location_init" not in st.session_state:
+    st.session_state.user_location_init = True
+    # Call client-side location fetch
+    geo_service.get_user_location_client_side()
+
 # Initialize session state
 if "benchmark_engine" not in st.session_state:
     st.session_state.benchmark_engine = BenchmarkEngine()

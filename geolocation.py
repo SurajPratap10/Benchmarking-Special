@@ -4,18 +4,94 @@ Geolocation utilities for tracking test locations
 import requests
 from typing import Dict, Optional
 import json
+import streamlit as st
+from streamlit.components.v1 import html
 
 class GeolocationService:
     """Service to get geolocation information"""
     
     def __init__(self):
         self.cache = {}
+        self.user_location_fetched = False
     
-    def get_location(self, force_refresh: bool = False) -> Dict[str, str]:
+    def get_user_location_client_side(self):
         """
-        Get current geolocation based on IP address.
-        This will detect the server location when deployed on Streamlit Cloud.
+        Fetch user's location from their browser using client-side JavaScript.
+        This runs in the user's browser and gets their actual location.
         """
+        if 'user_location' not in st.session_state:
+            st.session_state.user_location = None
+        
+        # JavaScript code to fetch location from user's browser
+        location_script = """
+        <script>
+        // Fetch user location from their browser
+        fetch('https://ipapi.co/json/')
+            .then(response => response.json())
+            .then(data => {
+                // Send data back to Streamlit
+                window.parent.postMessage({
+                    type: 'streamlit:setComponentValue',
+                    value: {
+                        country: data.country_name || 'Unknown',
+                        country_code: data.country_code || 'XX',
+                        city: data.city || 'Unknown',
+                        region: data.region || 'Unknown',
+                        latitude: String(data.latitude || 0),
+                        longitude: String(data.longitude || 0),
+                        timezone: data.timezone || 'UTC',
+                        ip: data.ip || 'Unknown'
+                    }
+                }, '*');
+            })
+            .catch(error => {
+                console.error('Geolocation failed:', error);
+                // Fallback to another service
+                fetch('http://ip-api.com/json/')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            window.parent.postMessage({
+                                type: 'streamlit:setComponentValue',
+                                value: {
+                                    country: data.country || 'Unknown',
+                                    country_code: data.countryCode || 'XX',
+                                    city: data.city || 'Unknown',
+                                    region: data.regionName || 'Unknown',
+                                    latitude: String(data.lat || 0),
+                                    longitude: String(data.lon || 0),
+                                    timezone: data.timezone || 'UTC',
+                                    ip: data.query || 'Unknown'
+                                }
+                            }, '*');
+                        }
+                    });
+            });
+        </script>
+        """
+        
+        # Render the component (hidden, just for fetching location)
+        result = html(location_script, height=0)
+        
+        if result:
+            st.session_state.user_location = result
+            self.cache['location'] = result
+            return result
+        
+        return None
+    
+    def get_location(self, force_refresh: bool = False, use_client_side: bool = True) -> Dict[str, str]:
+        """
+        Get current geolocation.
+        
+        Args:
+            force_refresh: Force refresh the location
+            use_client_side: If True, tries to get user's actual location from their browser
+        """
+        
+        # Try to get user's location from session state (client-side)
+        if use_client_side and 'user_location' in st.session_state and st.session_state.user_location:
+            return st.session_state.user_location
         
         # Check cache first (unless forced refresh)
         if not force_refresh and 'location' in self.cache:
