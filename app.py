@@ -457,7 +457,7 @@ def generate_blind_test_samples(text: str, providers: List[str]):
             )
             return result
             
-            except Exception as e:
+        except Exception as e:
             st.error(f"Error testing provider: {str(e)}")
             return None
     
