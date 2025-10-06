@@ -155,6 +155,10 @@ def quick_test_page():
     st.header("🚀 Quick Test")
     st.markdown("Test a single text prompt across multiple TTS providers")
     
+    # Initialize session state for quick test results
+    if "quick_test_results" not in st.session_state:
+        st.session_state.quick_test_results = None
+    
     # Get configuration status
     config_status = check_configuration()
     
@@ -206,7 +210,7 @@ def quick_test_page():
             )
         
         # Test button
-        if st.button("🎵 Generate & Compare", type="primary"):
+        if st.button("Generate & Compare", type="primary"):
             if text_input and selected_providers:
                 # Validate input with security checks
                 valid, error_msg = session_manager.validate_request(text_input)
@@ -216,6 +220,11 @@ def quick_test_page():
                     st.error(f"❌ {error_msg}")
             else:
                 st.error("Please enter text and select at least one provider.")
+    
+    # Display results BELOW the input section (outside button context)
+    if st.session_state.quick_test_results is not None:
+        st.markdown("---")  # Separator line
+        display_quick_test_results(st.session_state.quick_test_results)
 
 def run_quick_test(text: str, providers: List[str], voice_options: Dict[str, str]):
     """Run quick test for selected providers"""
@@ -260,13 +269,20 @@ def run_quick_test(text: str, providers: List[str], voice_options: Dict[str, str
         
         progress_bar.progress((i + 1) / len(providers))
     
-    status_text.text("Tests completed!")
+    status_text.text("✅ Tests completed!")
     
-    # Display results
+    # Clean up progress indicators after a moment
+    import time
+    time.sleep(0.5)
+    progress_bar.empty()
+    status_text.empty()
+    
+    # Store results in session state for display
     if results:
-        display_quick_test_results(results)
+        st.session_state.quick_test_results = results
     else:
         st.error("No successful results to display.")
+        st.session_state.quick_test_results = None
 
 def display_quick_test_results(results: List[BenchmarkResult]):
     """Display quick test results"""
@@ -317,7 +333,7 @@ def display_quick_test_results(results: List[BenchmarkResult]):
             st.plotly_chart(fig_size, use_container_width=True)
     
     # Audio playback
-    st.subheader("🔊 Audio Playback")
+    st.subheader("Audio Playback")
     
     if len(successful_results) >= 2:
         st.markdown("**Listen to the audio samples:**")
