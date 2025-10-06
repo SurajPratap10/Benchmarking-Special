@@ -566,6 +566,104 @@ class ElevenLabsTTSProvider(TTSProvider):
         """Get available ElevenLabs voices"""
         return self.config.supported_voices
 
+class OpenAITTSProvider(TTSProvider):
+    """OpenAI TTS provider implementation"""
+    
+    def __init__(self):
+        super().__init__("openai")
+    
+    async def generate_speech(self, request: TTSRequest) -> TTSResult:
+        """Generate speech using OpenAI TTS API"""
+        start_time = time.time()
+        
+        # Validate request
+        is_valid, error_msg = self.validate_request(request)
+        if not is_valid:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=0,
+                file_size_bytes=0,
+                error_message=error_msg,
+                metadata={}
+            )
+        
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        # OpenAI TTS API payload structure
+        payload = {
+            "model": "tts-1-hd",  # High-quality model
+            "input": request.text,
+            "voice": request.voice.lower(),  # alloy, echo, fable, onyx, nova, shimmer
+            "response_format": "mp3",
+            "speed": request.speed if request.speed else 1.0
+        }
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    self.config.base_url,
+                    headers=headers,
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
+                    end_time = time.time()
+                    latency_ms = (end_time - start_time) * 1000
+                    
+                    if response.status == 200:
+                        # OpenAI returns audio data directly
+                        audio_data = await response.read()
+                        return TTSResult(
+                            success=True,
+                            audio_data=audio_data,
+                            latency_ms=latency_ms,
+                            file_size_bytes=len(audio_data),
+                            error_message=None,
+                            metadata={
+                                "voice": request.voice,
+                                "model": "tts-1-hd",
+                                "provider": self.provider_id,
+                                "format": "mp3",
+                                "speed": payload["speed"]
+                            }
+                        )
+                    else:
+                        error_text = await response.text()
+                        return TTSResult(
+                            success=False,
+                            audio_data=None,
+                            latency_ms=latency_ms,
+                            file_size_bytes=0,
+                            error_message=f"API Error {response.status}: {error_text}",
+                            metadata={"provider": self.provider_id}
+                        )
+        
+        except asyncio.TimeoutError:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=(time.time() - start_time) * 1000,
+                file_size_bytes=0,
+                error_message="Request timeout",
+                metadata={"provider": self.provider_id}
+            )
+        except Exception as e:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=(time.time() - start_time) * 1000,
+                file_size_bytes=0,
+                error_message=f"Error: {str(e)}",
+                metadata={"provider": self.provider_id}
+            )
+    
+    def get_available_voices(self) -> list:
+        """Get available OpenAI voices"""
+        return self.config.supported_voices
+
 class TTSProviderFactory:
     """Factory for creating TTS providers"""
     
@@ -578,6 +676,8 @@ class TTSProviderFactory:
             return DeepgramTTSProvider()
         elif provider_id == "elevenlabs":
             return ElevenLabsTTSProvider()
+        elif provider_id == "openai":
+            return OpenAITTSProvider()
         else:
             raise ValueError(f"Unknown provider: {provider_id}")
     

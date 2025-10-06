@@ -44,6 +44,15 @@ TTS_PROVIDERS = {
         max_chars=5000,
         supports_streaming=True,
         model_name="ElevenLabs Multilingual v2"
+    ),
+    "openai": TTSConfig(
+        name="OpenAI",
+        api_key_env="OPENAI_API_KEY",
+        base_url="https://api.openai.com/v1/audio/speech",
+        supported_voices=["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
+        max_chars=4096,
+        supports_streaming=True,
+        model_name="OpenAI TTS HD (tts-1-hd)"
     )
 }
 
