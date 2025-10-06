@@ -77,7 +77,7 @@ def main():
     """Main application function"""
     
     # Header
-    st.title("🎙️ TTS Benchmarking Tool")
+    st.title("TTS Benchmarking Tool")
     st.markdown("Compare Text-to-Speech providers with comprehensive metrics and analysis")
     
     # Sidebar for configuration and navigation

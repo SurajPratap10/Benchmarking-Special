@@ -72,7 +72,7 @@ DATASET_CONFIG = {
 # UI Configuration
 UI_CONFIG = {
     "page_title": "TTS Benchmarking Tool",
-    "page_icon": "🎙️",
+    "page_icon": None,
     "layout": "wide",
     "sidebar_width": 300,
     "chart_height": 400,
