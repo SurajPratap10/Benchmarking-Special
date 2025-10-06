@@ -52,7 +52,7 @@ TTS_PROVIDERS = {
         supported_voices=["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
         max_chars=4096,
         supports_streaming=True,
-        model_name="OpenAI TTS HD (tts-1-hd)"
+        model_name="OpenAI GPT-4o Mini TTS"
     )
 }
 
