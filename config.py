@@ -53,6 +53,24 @@ TTS_PROVIDERS = {
         max_chars=4096,
         supports_streaming=True,
         model_name="OpenAI GPT-4o Mini TTS"
+    ),
+    "cartesia_sonic2": TTSConfig(
+        name="Cartesia Sonic 2.0",
+        api_key_env="CARTESIA_API_KEY",
+        base_url="https://api.cartesia.ai/tts/bytes",
+        supported_voices=["British Lady", "Conversational Lady", "Classy British Man", "Friendly Reading Man", "Midwestern Woman", "Professional Man", "Newsman"],
+        max_chars=5000,
+        supports_streaming=True,
+        model_name="Cartesia Sonic 2.0"
+    ),
+    "cartesia_turbo": TTSConfig(
+        name="Cartesia Sonic Turbo",
+        api_key_env="CARTESIA_API_KEY",
+        base_url="https://api.cartesia.ai/tts/bytes",
+        supported_voices=["British Lady", "Conversational Lady", "Classy British Man", "Friendly Reading Man", "Midwestern Woman", "Professional Man", "Newsman"],
+        max_chars=5000,
+        supports_streaming=True,
+        model_name="Cartesia Sonic Turbo"
     )
 }
 

@@ -664,6 +664,139 @@ class OpenAITTSProvider(TTSProvider):
         """Get available OpenAI voices"""
         return self.config.supported_voices
 
+class CartesiaTTSProvider(TTSProvider):
+    """Base class for Cartesia TTS providers"""
+    
+    def __init__(self, provider_id: str, model_id: str):
+        super().__init__(provider_id)
+        self.model_id = model_id
+        # Map friendly voice names to Cartesia voice IDs
+        self.voice_id_map = {
+            "British Lady": "79a125e8-cd45-4c13-8a67-188112f4dd22",
+            "Conversational Lady": "a0e99841-438c-4a64-b679-ae501e7d6091",
+            "Classy British Man": "63ff761f-c1e8-414b-b969-d1833d1c870c",
+            "Friendly Reading Man": "5619d38c-cf51-4d8e-9575-48f61a280413",
+            "Midwestern Woman": "a3520a8f-226a-428d-9fcd-b0a4711a6829",
+            "Professional Man": "41534e16-2966-4c6b-9670-111411def906",
+            "Newsman": "daf747c6-6bc2-45c9-b3e6-d99d48c6697e"
+        }
+    
+    async def generate_speech(self, request: TTSRequest) -> TTSResult:
+        """Generate speech using Cartesia TTS API"""
+        start_time = time.time()
+        
+        # Validate request
+        is_valid, error_msg = self.validate_request(request)
+        if not is_valid:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=0,
+                file_size_bytes=0,
+                error_message=error_msg,
+                metadata={}
+            )
+        
+        # Get voice ID from friendly name
+        voice_id = self.voice_id_map.get(request.voice, self.voice_id_map["Conversational Lady"])
+        
+        headers = {
+            "X-API-Key": self.api_key,
+            "Cartesia-Version": "2024-06-10",
+            "Content-Type": "application/json"
+        }
+        
+        # Cartesia API payload structure
+        payload = {
+            "model_id": self.model_id,
+            "transcript": request.text,
+            "voice": {
+                "mode": "id",
+                "id": voice_id
+            },
+            "language": "en",
+            "output_format": {
+                "container": "mp3",
+                "encoding": "mp3",
+                "sample_rate": 44100
+            }
+        }
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    self.config.base_url,
+                    headers=headers,
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
+                    end_time = time.time()
+                    latency_ms = (end_time - start_time) * 1000
+                    
+                    if response.status == 200:
+                        # Cartesia returns audio data directly
+                        audio_data = await response.read()
+                        return TTSResult(
+                            success=True,
+                            audio_data=audio_data,
+                            latency_ms=latency_ms,
+                            file_size_bytes=len(audio_data),
+                            error_message=None,
+                            metadata={
+                                "voice": request.voice,
+                                "voice_id": voice_id,
+                                "model": self.model_id,
+                                "provider": self.provider_id,
+                                "format": "mp3",
+                                "sample_rate": 44100
+                            }
+                        )
+                    else:
+                        error_text = await response.text()
+                        return TTSResult(
+                            success=False,
+                            audio_data=None,
+                            latency_ms=latency_ms,
+                            file_size_bytes=0,
+                            error_message=f"API Error {response.status}: {error_text}",
+                            metadata={"provider": self.provider_id}
+                        )
+        
+        except asyncio.TimeoutError:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=(time.time() - start_time) * 1000,
+                file_size_bytes=0,
+                error_message="Request timeout",
+                metadata={"provider": self.provider_id}
+            )
+        except Exception as e:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=(time.time() - start_time) * 1000,
+                file_size_bytes=0,
+                error_message=f"Error: {str(e)}",
+                metadata={"provider": self.provider_id}
+            )
+    
+    def get_available_voices(self) -> list:
+        """Get available Cartesia voices"""
+        return self.config.supported_voices
+
+class CartesiaSonic2Provider(CartesiaTTSProvider):
+    """Cartesia Sonic 2.0 TTS provider"""
+    
+    def __init__(self):
+        super().__init__("cartesia_sonic2", "sonic-2")
+
+class CartesiaTurboProvider(CartesiaTTSProvider):
+    """Cartesia Sonic Turbo TTS provider"""
+    
+    def __init__(self):
+        super().__init__("cartesia_turbo", "sonic-turbo")
+
 class TTSProviderFactory:
     """Factory for creating TTS providers"""
     
@@ -678,6 +811,10 @@ class TTSProviderFactory:
             return ElevenLabsTTSProvider()
         elif provider_id == "openai":
             return OpenAITTSProvider()
+        elif provider_id == "cartesia_sonic2":
+            return CartesiaSonic2Provider()
+        elif provider_id == "cartesia_turbo":
+            return CartesiaTurboProvider()
         else:
             raise ValueError(f"Unknown provider: {provider_id}")
     
