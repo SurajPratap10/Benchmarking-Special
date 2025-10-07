@@ -853,6 +853,8 @@ class TTSProviderFactory:
         """Create a TTS provider instance"""
         if provider_id == "murf":
             return MurfAITTSProvider()
+        elif provider_id == "murf_falcon":
+            return MurfFalconTTSProvider()
         elif provider_id == "deepgram":
             return DeepgramTTSProvider()
         elif provider_id == "elevenlabs":
