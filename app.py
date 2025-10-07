@@ -30,6 +30,106 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Custom CSS for purple theme
+st.markdown("""
+<style>
+    /* Primary buttons */
+    .stButton > button {
+        background-color: #6642B3 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 5px !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stButton > button:hover {
+        background-color: #5535a0 !important;
+        box-shadow: 0 4px 8px rgba(102, 66, 179, 0.3) !important;
+    }
+    
+    .stButton > button:active {
+        background-color: #4a2d8f !important;
+    }
+    
+    /* Select boxes */
+    .stSelectbox > div > div {
+        border-color: #6642B3 !important;
+    }
+    
+    .stSelectbox [data-baseweb="select"] > div {
+        border-color: #6642B3 !important;
+    }
+    
+    /* Multiselect */
+    .stMultiSelect [data-baseweb="select"] > div {
+        border-color: #6642B3 !important;
+    }
+    
+    .stMultiSelect [data-baseweb="tag"] {
+        background-color: #6642B3 !important;
+    }
+    
+    /* Radio buttons */
+    .stRadio > label > div[role="radiogroup"] > label > div:first-child {
+        background-color: #6642B3 !important;
+    }
+    
+    /* Checkboxes */
+    .stCheckbox > label > div[data-testid="stMarkdownContainer"] > p {
+        color: #6642B3 !important;
+    }
+    
+    /* Sliders */
+    .stSlider > div > div > div > div {
+        background-color: #6642B3 !important;
+    }
+    
+    .stSlider [data-baseweb="slider"] > div > div {
+        background-color: #6642B3 !important;
+    }
+    
+    .stSlider [data-baseweb="slider"] [role="slider"] {
+        background-color: #6642B3 !important;
+    }
+    
+    .stSlider [data-testid="stThumbValue"] {
+        color: #6642B3 !important;
+    }
+    
+    /* Text input focus */
+    .stTextInput > div > div > input:focus,
+    .stTextArea > div > div > textarea:focus {
+        border-color: #6642B3 !important;
+        box-shadow: 0 0 0 0.2rem rgba(102, 66, 179, 0.25) !important;
+    }
+    
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
+        background-color: #6642B3 !important;
+        color: white !important;
+    }
+    
+    /* Links */
+    a {
+        color: #6642B3 !important;
+    }
+    
+    a:hover {
+        color: #5535a0 !important;
+    }
+    
+    /* Expander header */
+    .streamlit-expanderHeader {
+        background-color: rgba(102, 66, 179, 0.1) !important;
+    }
+    
+    /* Success/Info messages accent */
+    .stSuccess, .stInfo {
+        border-left-color: #6642B3 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # Initialize session state
 if "benchmark_engine" not in st.session_state:
     st.session_state.benchmark_engine = BenchmarkEngine()
