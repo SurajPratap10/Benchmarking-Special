@@ -643,7 +643,7 @@ class OpenAITTSProvider(TTSProvider):
         
         # OpenAI TTS API payload structure
         payload = {
-            "model": "tts-1-hd",  # High-quality model
+            "model": "gpt-4o-mini-tts",  # GPT-4o Mini TTS model
             "input": request.text,
             "voice": request.voice.lower(),  # alloy, echo, fable, onyx, nova, shimmer
             "response_format": "mp3",

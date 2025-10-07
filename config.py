@@ -61,7 +61,7 @@ TTS_PROVIDERS = {
         supported_voices=["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
         max_chars=4096,
         supports_streaming=True,
-        model_name="OpenAI GPT-4o Mini TTS"
+        model_name="gpt-4o-mini-tts"
     ),
     "cartesia_sonic2": TTSConfig(
         name="Cartesia Sonic 2.0",
