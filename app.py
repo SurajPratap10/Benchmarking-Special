@@ -19,7 +19,7 @@ from benchmarking_engine import BenchmarkEngine, BenchmarkResult
 from tts_providers import TTSProviderFactory, TTSRequest
 import visualizations
 from export_utils import ExportManager
-from security import session_manager, secure_api_key_input, create_security_dashboard
+from security import session_manager
 from geolocation import geo_service
 
 # Page configuration
@@ -38,7 +38,7 @@ st.markdown("""
         background-color: #6642B3 !important;
         color: white !important;
         border: none !important;
-        border-radius: 5px !important;
+        border-radius: 8px !important;
         transition: all 0.3s ease !important;
     }
     
@@ -54,24 +54,29 @@ st.markdown("""
     /* Select boxes */
     .stSelectbox > div > div {
         border-color: #6642B3 !important;
+        border-radius: 8px !important;
     }
     
     .stSelectbox [data-baseweb="select"] > div {
         border-color: #6642B3 !important;
+        border-radius: 8px !important;
     }
     
     /* Multiselect */
     .stMultiSelect [data-baseweb="select"] > div {
         border-color: #6642B3 !important;
+        border-radius: 8px !important;
     }
     
     .stMultiSelect [data-baseweb="tag"] {
         background-color: #6642B3 !important;
+        border-radius: 8px !important;
     }
     
     /* Radio buttons */
     .stRadio > label > div[role="radiogroup"] > label > div:first-child {
         background-color: #6642B3 !important;
+        border-radius: 8px !important;
     }
     
     /* Checkboxes */
@@ -82,6 +87,11 @@ st.markdown("""
     /* Sliders - keep default Streamlit styling */
     
     /* Text input focus */
+    .stTextInput > div > div > input,
+    .stTextArea > div > div > textarea {
+        border-radius: 8px !important;
+    }
+    
     .stTextInput > div > div > input:focus,
     .stTextArea > div > div > textarea:focus {
         border-color: #6642B3 !important;
@@ -89,6 +99,10 @@ st.markdown("""
     }
     
     /* Tabs */
+    .stTabs [data-baseweb="tab-list"] button {
+        border-radius: 8px !important;
+    }
+    
     .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
         background-color: #6642B3 !important;
         color: white !important;
@@ -106,6 +120,7 @@ st.markdown("""
     /* Expander header */
     .streamlit-expanderHeader {
         background-color: rgba(102, 66, 179, 0.1) !important;
+        border-radius: 8px !important;
     }
     
     /* Success/Info messages accent */
@@ -207,7 +222,7 @@ def main():
         else:
             default_page = "Quick Test"
         
-        pages = ["Quick Test", "Blind Test", "Batch Benchmark", "Results Analysis", "Leaderboard", "Dataset Management", "Export Results", "Security"]
+        pages = ["Quick Test", "Blind Test", "Batch Benchmark", "Results Analysis", "Leaderboard", "Dataset Management", "Export Results"]
         default_index = pages.index(default_page) if default_page in pages else 0
         
         page = st.selectbox(
@@ -231,8 +246,6 @@ def main():
         dataset_management_page()
     elif page == "Export Results":
         export_results_page()
-    elif page == "Security":
-        security_page()
 
 def quick_test_page():
     """Quick test page for single TTS comparisons"""
@@ -510,7 +523,7 @@ def blind_test_page():
         """)
     
     # Generate blind test samples
-    if st.button("🎵 Generate Blind Test", type="primary"):
+    if st.button("Generate Blind Test", type="primary"):
         if text_input and len(configured_providers) >= 2:
             # Validate input
             valid, error_msg = session_manager.validate_request(text_input)
@@ -630,7 +643,7 @@ def display_blind_test_samples():
             key="blind_vote_radio"
         )
         
-        if st.button("✅ Submit Vote", type="primary", use_container_width=True):
+        if st.button("Submit Vote", type="primary", use_container_width=True):
             # Record vote
             selected_label = selected_sample.split()[1]  # Extract label (A, B, C, etc.)
             st.session_state.blind_test_vote_choice = selected_label
@@ -703,14 +716,14 @@ def display_blind_test_samples():
     col1, col2 = st.columns(2)
         
     with col1:
-            if st.button("🔄 Start New Blind Test", type="primary", use_container_width=True):
+            if st.button("Start New Blind Test", type="primary", use_container_width=True):
                 st.session_state.blind_test_samples = []
                 st.session_state.blind_test_voted = False
                 st.session_state.blind_test_vote_choice = None
                 st.rerun()
         
     with col2:
-            if st.button("📊 View Leaderboard", use_container_width=True):
+            if st.button("View Leaderboard", use_container_width=True):
                 # Navigate to leaderboard by setting session state
                 st.session_state.navigate_to = "Leaderboard"
                 st.rerun()
@@ -817,11 +830,11 @@ def batch_benchmark_page():
     dataset_source = "Generate New Dataset"
     
     # Generate dataset button
-    if st.button("📊 Prepare Test Dataset"):
+    if st.button("Prepare Test Dataset"):
         prepare_test_dataset(sample_count, selected_categories, selected_lengths, dataset_source)
     
     # Run benchmark button
-    if st.button("🚀 Run Benchmark", type="primary"):
+    if st.button("Run Benchmark", type="primary"):
         if selected_providers and st.session_state.get("test_samples"):
             run_batch_benchmark(selected_providers, voice_config, iterations)
         else:
@@ -1218,14 +1231,14 @@ def dataset_management_page():
     col1, col2 = st.columns(2)
     
     with col1:
-        if st.button("🎲 Generate New Dataset"):
+        if st.button("Generate New Dataset"):
             with st.spinner("Generating dataset..."):
                 st.session_state.dataset_generator.generate_dataset(100)
             st.success("New dataset generated!")
             st.rerun()
     
     with col2:
-        if st.button("💾 Export Dataset"):
+        if st.button("Export Dataset"):
             filename = f"dataset_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
             st.session_state.dataset_generator.export_dataset(filename)
             st.success(f"Dataset exported to {filename}")
@@ -1284,7 +1297,7 @@ def export_results_page():
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("📄 Export Individual Files"):
+        if st.button("Export Individual Files"):
             if filtered_results:
                 files_created = []
                 
@@ -1311,7 +1324,7 @@ def export_results_page():
                 st.success(f"✅ Exported {len(files_created)} files: {', '.join(files_created)}")
     
     with col2:
-        if st.button("📦 Create Export Package"):
+        if st.button("Create Export Package"):
             if filtered_results:
                 summaries = st.session_state.benchmark_engine.calculate_summary_stats(filtered_results)
                 leaderboard = st.session_state.benchmark_engine.get_leaderboard()
@@ -1332,7 +1345,7 @@ def export_results_page():
                 st.success(f"✅ Created export package: {package_file}")
     
     with col3:
-        if st.button("📊 Preview Export Data"):
+        if st.button("Preview Export Data"):
             if filtered_results:
                 st.subheader("📋 Export Preview")
                 
@@ -1351,77 +1364,6 @@ def export_results_page():
                 
                 if len(filtered_results) > 10:
                     st.caption(f"Showing first 10 of {len(filtered_results)} results")
-
-def security_page():
-    """Security configuration and monitoring page"""
-    
-    st.header("🔒 Security")
-    st.markdown("Security configuration and monitoring dashboard")
-    
-    # Security dashboard
-    create_security_dashboard()
-    
-    # API Key Management
-    st.subheader("🔑 API Key Management")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.write("**Murf AI API Key:**")
-        murf_key = secure_api_key_input("Murf AI", "MURF_API_KEY")
-        
-        if murf_key:
-            # Test the key
-            if st.button("🧪 Test Murf Key"):
-                try:
-                    provider = TTSProviderFactory.create_provider("murf")
-                    st.success("✅ Murf AI API key is valid")
-                except Exception as e:
-                    st.error(f"❌ Murf AI API key test failed: {str(e)}")
-    
-    with col2:
-        st.write("**Deepgram API Key:**")
-        deepgram_key = secure_api_key_input("Deepgram", "DEEPGRAM_API_KEY")
-        
-        if deepgram_key:
-            # Test the key
-            if st.button("🧪 Test Deepgram Key"):
-                try:
-                    provider = TTSProviderFactory.create_provider("deepgram")
-                    st.success("✅ Deepgram API key is valid")
-                except Exception as e:
-                    st.error(f"❌ Deepgram API key test failed: {str(e)}")
-    
-    # Rate Limiting Status
-    st.subheader("⚡ Rate Limiting")
-    
-    session_id = session_manager.get_session_id()
-    st.info(f"Current session: {session_id[:8]}...")
-    
-    # Show current rate limit status
-    allowed, error_msg = session_manager.check_rate_limit()
-    if allowed:
-        st.success("✅ Rate limit: OK")
-    else:
-        st.warning(f"⚠️ Rate limit: {error_msg}")
-    
-    # Security recommendations
-    st.subheader("💡 Security Recommendations")
-    
-    recommendations = [
-        "Use environment variables for API keys in production",
-        "Enable HTTPS for all deployments", 
-        "Monitor API usage and set up alerts",
-        "Regularly rotate API keys",
-        "Implement proper access controls",
-        "Keep dependencies updated",
-        "Use rate limiting to prevent abuse",
-        "Validate all user inputs",
-        "Log security events for monitoring"
-    ]
-    
-    for i, rec in enumerate(recommendations, 1):
-        st.write(f"{i}. {rec}")
 
 if __name__ == "__main__":
     main()
