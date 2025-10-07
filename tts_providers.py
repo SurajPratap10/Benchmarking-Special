@@ -223,6 +223,172 @@ class MurfAITTSProvider(TTSProvider):
         """Get available Murf AI voices"""
         return self.config.supported_voices
 
+class MurfFalconTTSProvider(TTSProvider):
+    """Murf Falcon TTS provider implementation (Turbo Stream)"""
+    
+    def __init__(self):
+        super().__init__("murf_falcon")
+    
+    async def generate_speech(self, request: TTSRequest) -> TTSResult:
+        """Generate speech using Murf Falcon API (Turbo Stream)"""
+        start_time = time.time()
+        
+        # Validate request
+        is_valid, error_msg = self.validate_request(request)
+        if not is_valid:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=0,
+                file_size_bytes=0,
+                error_message=error_msg,
+                metadata={}
+            )
+        
+        headers = {
+            "api-key": self.api_key,
+            "Content-Type": "application/json"
+        }
+        
+        # Murf Falcon API payload structure
+        payload = {
+            "text": request.text,
+            "voiceId": request.voice,
+            "audioFormat": request.format or "mp3"
+        }
+        
+        # Add speed/rate if specified
+        if request.speed and request.speed != 1.0:
+            payload["rate"] = request.speed
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    self.config.base_url,
+                    headers=headers,
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
+                    end_time = time.time()
+                    latency_ms = (end_time - start_time) * 1000
+                    
+                    if response.status == 200:
+                        # Check content type to determine response format
+                        content_type = response.headers.get('content-type', '').lower()
+                        
+                        if 'application/json' in content_type:
+                            # JSON response - might contain audio URL or data
+                            response_data = await response.json()
+                            
+                            if "audioFile" in response_data:
+                                # Murf Falcon returns audio URL in audioFile field
+                                audio_url = response_data["audioFile"]
+                                async with session.get(audio_url) as audio_response:
+                                    if audio_response.status == 200:
+                                        audio_data = await audio_response.read()
+                                        return TTSResult(
+                                            success=True,
+                                            audio_data=audio_data,
+                                            latency_ms=latency_ms,
+                                            file_size_bytes=len(audio_data),
+                                            error_message=None,
+                                            metadata={
+                                                "voice": request.voice,
+                                                "speed": request.speed,
+                                                "format": request.format,
+                                                "provider": self.provider_id,
+                                                "model": "falcon-turbo",
+                                                "audio_url": audio_url
+                                            }
+                                        )
+                                    else:
+                                        return TTSResult(
+                                            success=False,
+                                            audio_data=None,
+                                            latency_ms=latency_ms,
+                                            file_size_bytes=0,
+                                            error_message=f"Failed to download audio from URL: {audio_response.status}",
+                                            metadata={"provider": self.provider_id}
+                                        )
+                            elif "audio" in response_data:
+                                # Base64 encoded audio data
+                                import base64
+                                audio_data = base64.b64decode(response_data["audio"])
+                                return TTSResult(
+                                    success=True,
+                                    audio_data=audio_data,
+                                    latency_ms=latency_ms,
+                                    file_size_bytes=len(audio_data),
+                                    error_message=None,
+                                    metadata={
+                                        "voice": request.voice,
+                                        "speed": request.speed,
+                                        "format": request.format,
+                                        "provider": self.provider_id,
+                                        "model": "falcon-turbo"
+                                    }
+                                )
+                            else:
+                                return TTSResult(
+                                    success=False,
+                                    audio_data=None,
+                                    latency_ms=latency_ms,
+                                    file_size_bytes=0,
+                                    error_message=f"Unexpected JSON response format: {list(response_data.keys())}",
+                                    metadata={"provider": self.provider_id, "response": response_data}
+                                )
+                        else:
+                            # Direct audio data response (streaming)
+                            audio_data = await response.read()
+                            return TTSResult(
+                                success=True,
+                                audio_data=audio_data,
+                                latency_ms=latency_ms,
+                                file_size_bytes=len(audio_data),
+                                error_message=None,
+                                metadata={
+                                    "voice": request.voice,
+                                    "speed": request.speed,
+                                    "format": request.format,
+                                    "provider": self.provider_id,
+                                    "model": "falcon-turbo",
+                                    "content_type": content_type
+                                }
+                            )
+                    else:
+                        error_text = await response.text()
+                        return TTSResult(
+                            success=False,
+                            audio_data=None,
+                            latency_ms=latency_ms,
+                            file_size_bytes=0,
+                            error_message=f"API Error {response.status}: {error_text}",
+                            metadata={"provider": self.provider_id}
+                        )
+        
+        except asyncio.TimeoutError:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=(time.time() - start_time) * 1000,
+                file_size_bytes=0,
+                error_message="Request timeout",
+                metadata={"provider": self.provider_id}
+            )
+        except Exception as e:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=(time.time() - start_time) * 1000,
+                file_size_bytes=0,
+                error_message=f"Error: {str(e)}",
+                metadata={"provider": self.provider_id}
+            )
+    
+    def get_available_voices(self) -> list:
+        """Get available Murf Falcon voices"""
+        return self.config.supported_voices
+
 class DeepgramTTSProvider(TTSProvider):
     """Deepgram TTS provider implementation"""
     
