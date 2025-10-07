@@ -1041,59 +1041,30 @@ def leaderboard_page():
     vote_stats = db.get_vote_statistics()
     
     if vote_stats['total_votes'] > 0:
-        col1, col2 = st.columns(2)
+        st.metric("Total User Votes", vote_stats['total_votes'])
         
-        with col1:
-            st.metric("Total User Votes", vote_stats['total_votes'])
+        # Show vote wins per provider
+        if vote_stats['wins']:
+            vote_data = []
+            location_display = f"{geo_service.get_country_flag()} {geo_service.get_location_string()}"
             
-            # Show vote wins per provider
-            if vote_stats['wins']:
-                vote_data = []
-                location_display = f"{geo_service.get_country_flag()} {geo_service.get_location_string()}"
+            for provider, wins in vote_stats['wins'].items():
+                losses = vote_stats['losses'].get(provider, 0)
+                total = wins + losses
+                win_rate = (wins / total * 100) if total > 0 else 0
                 
-                for provider, wins in vote_stats['wins'].items():
-                    losses = vote_stats['losses'].get(provider, 0)
-                    total = wins + losses
-                    win_rate = (wins / total * 100) if total > 0 else 0
-                    
-                    vote_data.append({
-                        "Provider": provider.title(),
-                        "Model": get_model_name(provider),
-                        "Location": location_display,
-                        "User Votes Won": wins,
-                        "User Win Rate %": f"{win_rate:.1f}%"
-                    })
-                
-                vote_df = pd.DataFrame(vote_data)
-                st.dataframe(vote_df, use_container_width=True, hide_index=True)
-        
-        with col2:
-            # Recent votes
-            if vote_stats['recent_votes']:
-                st.write("**Recent Votes:**")
-                for winner, loser, timestamp in vote_stats['recent_votes'][:5]:
-                    st.write(f"🏆 {winner.title()} beat {loser.title()}")
+                vote_data.append({
+                    "Provider": provider.title(),
+                    "Model": get_model_name(provider),
+                    "Location": location_display,
+                    "User Votes Won": wins,
+                    "User Win Rate %": f"{win_rate:.1f}%"
+                })
+            
+            vote_df = pd.DataFrame(vote_data)
+            st.dataframe(vote_df, use_container_width=True, hide_index=True)
     else:
         st.info("No user votes yet. Vote in Quick Test to start building preference data!")
-    
-    # Data persistence info
-    st.info("💾 **Data Persistence**: All ELO ratings, statistics, and user votes are automatically saved and persist across sessions!")
-    
-    # ELO explanation
-    with st.expander("ℹ️ About ELO Ratings & Persistence"):
-        st.markdown("""
-        **ELO Rating System:**
-        - Similar to chess ratings, providers gain/lose points based on head-to-head comparisons
-        - Lower latency wins in direct comparisons
-        - Ratings start at 1500 and adjust based on performance
-        - Higher ratings indicate consistently better performance
-        
-        **Data Persistence:**
-        - All benchmark results are saved to a SQLite database
-        - ELO ratings persist across app restarts and browser refreshes
-        - Historical data accumulates over time for better accuracy
-        - Statistics update automatically with each new test
-        """)
 
 
 if __name__ == "__main__":
