@@ -544,10 +544,16 @@ def display_blind_test_samples():
             # Find the winning sample
             winner_result = next(r for r in samples if r.blind_label == selected_label)
             
-            # Update ELO ratings - winner beats all others
-            for result in samples:
-                if result.blind_label != selected_label:
-                    handle_blind_test_vote(winner_result, result)
+            # Update ELO ratings - winner beats all others (but only count as one vote)
+            # We'll update ELO ratings for all comparisons but only save one vote to database
+            losers = [r for r in samples if r.blind_label != selected_label]
+            if losers:
+                # Update ELO ratings for all comparisons
+                for loser_result in losers:
+                    handle_blind_test_vote(winner_result, loser_result, save_vote=False)
+                
+                # Save only one vote to database
+                handle_blind_test_vote(winner_result, losers[0], save_vote=True)
             
             st.rerun()
     
@@ -623,7 +629,7 @@ def display_blind_test_samples():
                 st.session_state.navigate_to = "Leaderboard"
                 st.rerun()
 
-def handle_blind_test_vote(winner_result: BenchmarkResult, loser_result: BenchmarkResult):
+def handle_blind_test_vote(winner_result: BenchmarkResult, loser_result: BenchmarkResult, save_vote: bool = True):
     """Handle blind test vote and update ELO ratings"""
     
     from database import db
@@ -638,13 +644,14 @@ def handle_blind_test_vote(winner_result: BenchmarkResult, loser_result: Benchma
             winner_result.provider, loser_result.provider, k_factor=32
         )
         
-        # Save the vote in database
-        db.save_user_vote(
-            winner_result.provider, 
-            loser_result.provider, 
-            winner_result.text[:100] + "..." if len(winner_result.text) > 100 else winner_result.text,
-            session_id="blind_test_session"
-        )
+        # Save the vote in database only if requested
+        if save_vote:
+            db.save_user_vote(
+                winner_result.provider, 
+                loser_result.provider, 
+                winner_result.text[:100] + "..." if len(winner_result.text) > 100 else winner_result.text,
+                session_id="blind_test_session"
+            )
         
     except Exception as e:
         st.error(f"Error updating ratings: {e}")
