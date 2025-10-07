@@ -53,24 +53,29 @@ st.markdown("""
     
     /* Select boxes */
     .stSelectbox > div > div {
-        border-color: #6642B3 !important;
+        border-color: #d0d0d0 !important;
         border-radius: 8px !important;
     }
     
     .stSelectbox [data-baseweb="select"] > div {
-        border-color: #6642B3 !important;
+        border-color: #d0d0d0 !important;
         border-radius: 8px !important;
     }
     
     /* Multiselect */
     .stMultiSelect [data-baseweb="select"] > div {
-        border-color: #6642B3 !important;
+        border-color: #d0d0d0 !important;
         border-radius: 8px !important;
     }
     
     .stMultiSelect [data-baseweb="tag"] {
-        background-color: #6642B3 !important;
+        background-color: #e8e8e8 !important;
+        color: #4a4a4a !important;
         border-radius: 8px !important;
+    }
+    
+    .stMultiSelect [data-baseweb="tag"] svg {
+        fill: #4a4a4a !important;
     }
     
     /* Radio buttons */
@@ -84,7 +89,18 @@ st.markdown("""
         color: #6642B3 !important;
     }
     
-    /* Sliders - keep default Streamlit styling */
+    /* Sliders */
+    .stSlider [data-baseweb="slider"] [role="slider"] {
+        background-color: #6642B3 !important;
+    }
+    
+    .stSlider [data-baseweb="slider"] [data-testid="stTickBar"] > div:first-child {
+        background-color: #6642B3 !important;
+    }
+    
+    .stSlider [data-baseweb="slider"] > div > div > div:first-child {
+        background: linear-gradient(to right, #6642B3 0%, #6642B3 100%) !important;
+    }
     
     /* Text input focus */
     .stTextInput > div > div > input,
