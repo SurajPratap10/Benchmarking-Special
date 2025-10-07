@@ -79,22 +79,7 @@ st.markdown("""
         color: #6642B3 !important;
     }
     
-    /* Sliders */
-    .stSlider > div > div > div > div {
-        background-color: #6642B3 !important;
-    }
-    
-    .stSlider [data-baseweb="slider"] > div > div {
-        background-color: #6642B3 !important;
-    }
-    
-    .stSlider [data-baseweb="slider"] [role="slider"] {
-        background-color: #6642B3 !important;
-    }
-    
-    .stSlider [data-testid="stThumbValue"] {
-        color: #6642B3 !important;
-    }
+    /* Sliders - keep default Streamlit styling */
     
     /* Text input focus */
     .stTextInput > div > div > input:focus,
