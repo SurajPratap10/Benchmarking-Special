@@ -18,7 +18,6 @@ from dataset import DatasetGenerator, TestSample
 from benchmarking_engine import BenchmarkEngine, BenchmarkResult
 from tts_providers import TTSProviderFactory, TTSRequest
 import visualizations
-from export_utils import ExportManager
 from security import session_manager
 from geolocation import geo_service
 
@@ -130,7 +129,7 @@ def main():
         else:
             default_page = "Quick Test"
         
-        pages = ["Quick Test", "Blind Test", "Batch Benchmark", "Results Analysis", "Leaderboard", "Export Results"]
+        pages = ["Quick Test", "Blind Test", "Batch Benchmark", "Results Analysis", "Leaderboard"]
         default_index = pages.index(default_page) if default_page in pages else 0
         
         page = st.selectbox(
@@ -150,8 +149,6 @@ def main():
         results_analysis_page()
     elif page == "Leaderboard":
         leaderboard_page()
-    elif page == "Export Results":
-        export_results_page()
 
 def quick_test_page():
     """Quick test page for single TTS comparisons"""
@@ -1101,127 +1098,6 @@ def leaderboard_page():
         - Statistics update automatically with each new test
         """)
 
-def export_results_page():
-    """Export results page"""
-    
-    st.header("📤 Export Results")
-    st.markdown("Export benchmark results in various formats")
-    
-    if not st.session_state.results:
-        st.info("No results available for export. Run some benchmarks first.")
-        return
-    
-    # Initialize export manager
-    export_manager = ExportManager()
-    
-    # Export options
-    st.subheader("🔧 Export Options")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        export_formats = st.multiselect(
-            "Select export formats:",
-            ["JSON", "CSV", "Excel", "Comprehensive Report"],
-            default=["JSON", "CSV"]
-        )
-        
-        include_summary = st.checkbox("Include summary statistics", value=True)
-        include_leaderboard = st.checkbox("Include ELO leaderboard", value=True)
-    
-    with col2:
-        # Filter options
-        st.write("**Filter Options:**")
-        
-        providers = list(set(r.provider for r in st.session_state.results))
-        selected_providers = st.multiselect("Providers:", providers, default=providers)
-        
-        success_only = st.checkbox("Successful results only", value=False)
-    
-    # Filter results
-    filtered_results = st.session_state.results
-    
-    if selected_providers:
-        filtered_results = [r for r in filtered_results if r.provider in selected_providers]
-    
-    if success_only:
-        filtered_results = [r for r in filtered_results if r.success]
-    
-    st.info(f"Exporting {len(filtered_results)} results")
-    
-    # Export buttons
-    st.subheader("📁 Export Actions")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.button("Export Individual Files"):
-            if filtered_results:
-                files_created = []
-                
-                if "JSON" in export_formats:
-                    json_file = export_manager.export_results_json(filtered_results)
-                    files_created.append(json_file)
-                
-                if "CSV" in export_formats:
-                    csv_file = export_manager.export_results_csv(filtered_results)
-                    files_created.append(csv_file)
-                
-                if "Excel" in export_formats and include_summary:
-                    summaries = st.session_state.benchmark_engine.calculate_summary_stats(filtered_results)
-                    leaderboard = st.session_state.benchmark_engine.get_leaderboard()
-                    excel_file = export_manager.export_excel_workbook(filtered_results, summaries, leaderboard)
-                    files_created.append(excel_file)
-                
-                if "Comprehensive Report" in export_formats and include_summary:
-                    summaries = st.session_state.benchmark_engine.calculate_summary_stats(filtered_results)
-                    leaderboard = st.session_state.benchmark_engine.get_leaderboard()
-                    report_file = export_manager.export_summary_report(filtered_results, summaries, leaderboard)
-                    files_created.append(report_file)
-                
-                st.success(f"✅ Exported {len(files_created)} files: {', '.join(files_created)}")
-    
-    with col2:
-        if st.button("Create Export Package"):
-            if filtered_results:
-                summaries = st.session_state.benchmark_engine.calculate_summary_stats(filtered_results)
-                leaderboard = st.session_state.benchmark_engine.get_leaderboard()
-                
-                format_mapping = {
-                    "JSON": "json",
-                    "CSV": "csv", 
-                    "Excel": "excel",
-                    "Comprehensive Report": "report"
-                }
-                
-                include_formats = [format_mapping[fmt] for fmt in export_formats if fmt in format_mapping]
-                
-                package_file = export_manager.create_export_package(
-                    filtered_results, summaries, leaderboard, include_formats
-                )
-                
-                st.success(f"✅ Created export package: {package_file}")
-    
-    with col3:
-        if st.button("Preview Export Data"):
-            if filtered_results:
-                st.subheader("📋 Export Preview")
-                
-                # Show sample data with model names and location
-                df = pd.DataFrame([{
-                    "Provider": r.provider.title(),
-                    "Model": r.model_name if hasattr(r, 'model_name') and r.model_name else TTS_PROVIDERS.get(r.provider, {}).get('model_name', r.provider),
-                    "Location": get_location_display(r) if hasattr(r, 'location_country') else '🌍 Unknown',
-                    "Success": r.success,
-                    "Latency (ms)": r.latency_ms,
-                    "File Size (KB)": r.file_size_bytes / 1024,
-                    "Timestamp": r.timestamp
-                } for r in filtered_results[:10]])
-                
-                st.dataframe(df, use_container_width=True)
-                
-                if len(filtered_results) > 10:
-                    st.caption(f"Showing first 10 of {len(filtered_results)} results")
 
 if __name__ == "__main__":
     main()
