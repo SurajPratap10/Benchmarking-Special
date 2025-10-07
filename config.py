@@ -29,7 +29,7 @@ TTS_PROVIDERS = {
     ),
     "murf_falcon": TTSConfig(
         name="Murf AI Falcon",
-        api_key_env="MURF_FALCON_API_KEY",
+        api_key_env="MURF_API_KEY",
         base_url="https://api.murf.ai/v1/speech/turbo-stream",
         supported_voices=["en-US-natalie", "en-US-miles", "en-US-amara", "en-US-maverick", "en-US-ken", "en-US-terrell"],
         max_chars=3000,
