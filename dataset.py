@@ -138,14 +138,15 @@ class DatasetGenerator:
         categories = list(self.base_sentences.keys())
         length_categories = ["short", "medium", "long", "very_long"]
         
-        samples_per_category = total_samples // len(categories)
-        samples_per_length = samples_per_category // len(length_categories)
+        # Ensure we generate enough samples for each category-length combination
+        samples_per_combination = max(1, total_samples // (len(categories) * len(length_categories)))
         
         sample_id = 1
         
+        # Generate samples for each category-length combination
         for category in categories:
             for length_cat in length_categories:
-                for _ in range(samples_per_length):
+                for _ in range(samples_per_combination):
                     # Get word count range for this length category
                     if length_cat == "short":
                         word_range = (10, 30)

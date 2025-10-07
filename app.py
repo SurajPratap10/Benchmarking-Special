@@ -130,7 +130,7 @@ def main():
         else:
             default_page = "Quick Test"
         
-        pages = ["Quick Test", "Blind Test", "Batch Benchmark", "Results Analysis", "Leaderboard", "Dataset Management", "Export Results"]
+        pages = ["Quick Test", "Blind Test", "Batch Benchmark", "Results Analysis", "Leaderboard", "Export Results"]
         default_index = pages.index(default_page) if default_page in pages else 0
         
         page = st.selectbox(
@@ -150,8 +150,6 @@ def main():
         results_analysis_page()
     elif page == "Leaderboard":
         leaderboard_page()
-    elif page == "Dataset Management":
-        dataset_management_page()
     elif page == "Export Results":
         export_results_page()
 
@@ -729,37 +727,44 @@ def batch_benchmark_page():
                 key=f"batch_voices_{provider}"
             )
     
-    # Dataset source selection
-    st.subheader("📚 Dataset Source")
-    
-    dataset_source = "Generate New Dataset"
-    
-    # Generate dataset button
-    if st.button("Prepare Test Dataset"):
-        prepare_test_dataset(sample_count, selected_categories, selected_lengths, dataset_source)
-    
     # Run benchmark button
     if st.button("Run Benchmark", type="primary"):
-        if selected_providers and st.session_state.get("test_samples"):
+        if selected_providers:
+            # Generate test samples automatically
+            prepare_test_dataset(sample_count, selected_categories, selected_lengths)
             run_batch_benchmark(selected_providers, voice_config, iterations)
         else:
-            st.error("Please generate a test dataset and select providers first.")
+            st.error("Please select at least one provider first.")
 
-def prepare_test_dataset(sample_count: int, categories: List[str], lengths: List[str], dataset_source: str):
+def prepare_test_dataset(sample_count: int, categories: List[str], lengths: List[str]):
     """Prepare test dataset for batch benchmarking"""
     
     with st.spinner("Preparing test dataset..."):
         final_samples = []
         
-        # Generate new samples
-        all_samples = st.session_state.dataset_generator.generate_dataset(sample_count * 2)
+        # Generate more samples to ensure we have enough after filtering
+        all_samples = st.session_state.dataset_generator.generate_dataset(sample_count * 4)
         
-        # Filter samples
+        # Filter samples that match criteria
+        matching_samples = []
         for sample in all_samples:
             if (sample.category in categories and 
-                sample.length_category in lengths and 
-                len(final_samples) < sample_count):
-                final_samples.append(sample)
+                sample.length_category in lengths):
+                matching_samples.append(sample)
+        
+        # If we don't have enough matching samples, generate more
+        attempts = 0
+        while len(matching_samples) < sample_count and attempts < 3:
+            additional_samples = st.session_state.dataset_generator.generate_dataset(sample_count * 2)
+            for sample in additional_samples:
+                if (sample.category in categories and 
+                    sample.length_category in lengths and 
+                    len(matching_samples) < sample_count * 2):
+                    matching_samples.append(sample)
+            attempts += 1
+        
+        # Take the requested number of samples
+        final_samples = matching_samples[:sample_count]
         
         st.session_state.test_samples = final_samples
     
@@ -808,7 +813,7 @@ def prepare_test_dataset(sample_count: int, categories: List[str], lengths: List
 def run_batch_benchmark(providers: List[str], voice_config: Dict[str, List[str]], iterations: int):
     """Run batch benchmark"""
     
-    samples = st.session_state.test_samples
+    samples = st.session_state.get("test_samples", [])
     
     # Progress tracking
     progress_bar = st.progress(0)
@@ -1095,58 +1100,6 @@ def leaderboard_page():
         - Historical data accumulates over time for better accuracy
         - Statistics update automatically with each new test
         """)
-
-def dataset_management_page():
-    """Dataset management page"""
-    
-    st.header("📚 Dataset Management")
-    st.markdown("Manage and analyze test datasets")
-    
-    # Dataset statistics
-    if hasattr(st.session_state.dataset_generator, 'samples') and st.session_state.dataset_generator.samples:
-        stats = st.session_state.dataset_generator.get_dataset_stats()
-        
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric("Total Samples", stats["total_samples"])
-        
-        with col2:
-            st.metric("Avg Words", f"{stats['word_count_stats']['avg']:.1f}")
-        
-        with col3:
-            st.metric("Min Words", stats["word_count_stats"]["min"])
-        
-        with col4:
-            st.metric("Max Words", stats["word_count_stats"]["max"])
-        
-        # Category distribution
-        st.subheader("📊 Category Distribution")
-        
-        fig_categories = px.pie(
-            values=list(stats["categories"].values()),
-            names=list(stats["categories"].keys()),
-            title="Samples by Category"
-        )
-        st.plotly_chart(fig_categories, use_container_width=True)
-    
-    # Dataset actions
-    st.subheader("🔧 Dataset Actions")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("Generate New Dataset"):
-            with st.spinner("Generating dataset..."):
-                st.session_state.dataset_generator.generate_dataset(100)
-            st.success("New dataset generated!")
-            st.rerun()
-    
-    with col2:
-        if st.button("Export Dataset"):
-            filename = f"dataset_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-            st.session_state.dataset_generator.export_dataset(filename)
-            st.success(f"Dataset exported to {filename}")
 
 def export_results_page():
     """Export results page"""
