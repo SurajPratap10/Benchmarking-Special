@@ -183,7 +183,6 @@ def quick_test_page():
     )
     
     word_count = len(text_input.split())
-    st.caption(f"Word count: {word_count}")
     
     # Provider selection - only show configured providers
     selected_providers = st.multiselect(
@@ -404,7 +403,6 @@ def blind_test_page():
         )
         
         word_count = len(text_input.split())
-        st.caption(f"Word count: {word_count}")
     
     with col2:
         st.markdown("""

@@ -109,6 +109,15 @@ a:hover {
     border-left-color: #6642B3 !important;
 }
 
+/* Progress bar styling */
+.stProgress > div > div > div {
+    background-color: #e0e0e0 !important;
+}
+
+.stProgress > div > div > div > div {
+    background-color: #6642B3 !important;
+}
+
 /* Sidebar styling for minimal design */
 .stSidebar .stSuccess {
     font-size: 0.8rem !important;
