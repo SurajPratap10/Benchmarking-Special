@@ -1,5 +1,3 @@
-/* TTS Benchmarking Tool - Custom Styles */
-
 /* Primary buttons */
 .stButton > button {
     background-color: #6642B3 !important;
@@ -109,4 +107,45 @@ a:hover {
 /* Success/Info messages accent */
 .stSuccess, .stInfo {
     border-left-color: #6642B3 !important;
+}
+
+/* Sidebar styling for minimal design */
+.stSidebar .stSuccess {
+    font-size: 0.8rem !important;
+    padding: 0.3rem !important;
+    margin: 0.2rem 0 !important;
+}
+
+.stSidebar .stError {
+    font-size: 0.8rem !important;
+    padding: 0.3rem !important;
+    margin: 0.2rem 0 !important;
+}
+
+.stSidebar .stSubheader {
+    font-size: 1rem !important;
+    margin-bottom: 0.3rem !important;
+}
+
+.stSidebar .stCode {
+    font-size: 0.7rem !important;
+    padding: 0.2rem !important;
+}
+
+.stSidebar .stCaption {
+    font-size: 0.7rem !important;
+    margin-top: 0.2rem !important;
+}
+
+
+
+/* Make provider list more compact */
+.stSidebar .stMarkdown {
+    margin: 0.1rem 0 !important;
+    font-size: 0.8rem !important;
+}
+
+.stSidebar .stMarkdown p {
+    margin: 0.1rem 0 !important;
+    font-size: 0.9rem !important;
 }

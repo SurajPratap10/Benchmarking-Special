@@ -87,21 +87,37 @@ def main():
     st.title("TTS Benchmarking Tool")
     st.markdown("Compare Text-to-Speech providers with comprehensive metrics and analysis")
     
-    # Sidebar for configuration and navigation
+    # Sidebar for navigation and configuration
     with st.sidebar:
-        st.header("Configuration")
+        # Navigation - moved to top
+        # Check if there's a navigation request from a button
+        if "navigate_to" in st.session_state and st.session_state.navigate_to:
+            default_page = st.session_state.navigate_to
+            st.session_state.navigate_to = None  # Clear after using
+        else:
+            default_page = "Quick Test"
+        
+        st.subheader("Navigate to:")
+        
+        pages = ["Quick Test", "Blind Test", "Batch Benchmark", "Results Analysis", "Leaderboard"]
+        default_index = pages.index(default_page) if default_page in pages else 0
+        
+        page = st.selectbox(
+            "",
+            pages,
+            index=default_index,
+            label_visibility="collapsed"
+        )
+        
+        st.divider()
+        
+        # Configuration
+        st.subheader("Configuration")
         
         # Check API configuration
         config_status = check_configuration()
         
         if config_status["valid"]:
-            configured_count = config_status.get("configured_count", 0)
-            total_count = len(TTS_PROVIDERS)
-            if configured_count == total_count:
-                st.success(f"✅ All {total_count} providers configured")
-            else:
-                st.success(f"✅ {configured_count}/{total_count} providers configured")
-            
             # Show status for each provider
             for provider_id, status in config_status["providers"].items():
                 provider_name = TTS_PROVIDERS[provider_id].name
@@ -118,25 +134,6 @@ def main():
                     provider_name = TTS_PROVIDERS[provider_id].name
                     st.code(f"export {env_var}=your_api_key_here")
                     st.caption(f"For {provider_name}")
-        
-        st.divider()
-        
-        # Navigation
-        # Check if there's a navigation request from a button
-        if "navigate_to" in st.session_state and st.session_state.navigate_to:
-            default_page = st.session_state.navigate_to
-            st.session_state.navigate_to = None  # Clear after using
-        else:
-            default_page = "Quick Test"
-        
-        pages = ["Quick Test", "Blind Test", "Batch Benchmark", "Results Analysis", "Leaderboard"]
-        default_index = pages.index(default_page) if default_page in pages else 0
-        
-        page = st.selectbox(
-            "Navigate to:",
-            pages,
-            index=default_index
-        )
     
     # Main content based on selected page
     if page == "Quick Test":
