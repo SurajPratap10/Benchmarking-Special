@@ -274,50 +274,53 @@ def quick_test_page():
         st.error("No providers are configured. Please set API keys in the sidebar.")
         return
     
-    col1, col2 = st.columns([2, 1])
+    # Text input (full width)
+    text_input = st.text_area(
+        "Enter text to synthesize:",
+        value="Hello, this is a test of the text-to-speech system. How does it sound?",
+        height=100,
+        max_chars=1000
+    )
     
-    with col1:
-        # Text input
-        text_input = st.text_area(
-            "Enter text to synthesize:",
-            value="Hello, this is a test of the text-to-speech system. How does it sound?",
-            height=100,
-            max_chars=1000
-        )
-        
-        word_count = len(text_input.split())
-        st.caption(f"Word count: {word_count}")
+    word_count = len(text_input.split())
+    st.caption(f"Word count: {word_count}")
     
-    with col2:
-        # Provider selection - only show configured providers
-        selected_providers = st.multiselect(
-            "Select providers:",
-            configured_providers,
-            default=configured_providers,
-            help=f"Available providers: {', '.join([TTS_PROVIDERS[p].name for p in configured_providers])}"
-        )
+    # Provider selection - only show configured providers
+    selected_providers = st.multiselect(
+        "Select providers:",
+        configured_providers,
+        default=configured_providers,
+        help=f"Available providers: {', '.join([TTS_PROVIDERS[p].name for p in configured_providers])}"
+    )
+    
+    # Voice selection - display in rows of 4 columns
+    voice_options = {}
+    if selected_providers:
+        st.markdown("**Voice Selection:**")
         
-        # Voice selection
-        voice_options = {}
-        for provider in selected_providers:
-            voices = TTS_PROVIDERS[provider].supported_voices
-            voice_options[provider] = st.selectbox(
-                f"{provider.title()} voice:",
-                voices,
-                key=f"voice_{provider}"
-            )
-        
-        # Test button
-        if st.button("Generate & Compare", type="primary"):
-            if text_input and selected_providers:
-                # Validate input with security checks
-                valid, error_msg = session_manager.validate_request(text_input)
-                if valid:
-                    run_quick_test(text_input, selected_providers, voice_options)
-                else:
-                    st.error(f"❌ {error_msg}")
+        # Create rows of 4 columns each
+        for i in range(0, len(selected_providers), 4):
+            cols = st.columns(4)
+            for j, provider in enumerate(selected_providers[i:i+4]):
+                with cols[j]:
+                    voices = TTS_PROVIDERS[provider].supported_voices
+                    voice_options[provider] = st.selectbox(
+                        f"{provider.title()} voice:",
+                        voices,
+                        key=f"voice_{provider}"
+                    )
+    
+    # Test button
+    if st.button("Generate & Compare", type="primary"):
+        if text_input and selected_providers:
+            # Validate input with security checks
+            valid, error_msg = session_manager.validate_request(text_input)
+            if valid:
+                run_quick_test(text_input, selected_providers, voice_options)
             else:
-                st.error("Please enter text and select at least one provider.")
+                st.error(f"❌ {error_msg}")
+        else:
+            st.error("Please enter text and select at least one provider.")
     
     # Display results BELOW the input section (outside button context)
     if st.session_state.quick_test_results is not None:
@@ -433,31 +436,22 @@ def display_quick_test_results(results: List[BenchmarkResult]):
     # Audio playback
     st.subheader("Audio Playback")
     
-    if len(successful_results) >= 2:
+    if len(successful_results) >= 1:
         st.markdown("**Listen to the audio samples:**")
         
-        # Create side-by-side comparison
-        cols = st.columns(len(successful_results))
-        
-        for i, result in enumerate(successful_results):
-            with cols[i]:
-                st.markdown(f"**{result.provider.title()}**")
-                st.caption(f"Model: {result.model_name}")
-                
-                if result.audio_data:
-                    # Audio player
-                    st.audio(result.audio_data, format="audio/mp3")
-                    st.caption(f"Latency: {result.latency_ms:.1f}ms")
-                    st.caption(f"Size: {result.file_size_bytes/1024:.1f} KB")
-    
-    elif len(successful_results) == 1:
-        # Single result - just show audio
-        result = successful_results[0]
-        st.markdown(f"**{result.provider.title()}**")
-        st.caption(f"Model: {result.model_name}")
-        if result.audio_data:
-            st.audio(result.audio_data, format="audio/mp3")
-            st.caption(f"Latency: {result.latency_ms:.1f}ms | Size: {result.file_size_bytes/1024:.1f} KB")
+        # Display audio players in rows of 4
+        for i in range(0, len(successful_results), 4):
+            cols = st.columns(4)
+            for j, result in enumerate(successful_results[i:i+4]):
+                with cols[j]:
+                    st.markdown(f"**{result.provider.title()}**")
+                    st.caption(f"Model: {result.model_name}")
+                    
+                    if result.audio_data:
+                        # Audio player
+                        st.audio(result.audio_data, format="audio/mp3")
+                        st.caption(f"Latency: {result.latency_ms:.1f}ms")
+                        st.caption(f"Size: {result.file_size_bytes/1024:.1f} KB")
 
 def blind_test_page():
     """Blind test page for unbiased audio quality comparison"""
@@ -619,17 +613,17 @@ def display_blind_test_samples():
         st.subheader("🔊 Listen and Vote")
         st.markdown("**Listen to each sample and vote for the one with the best quality:**")
         
-        # Display samples in columns
-        cols = st.columns(len(samples))
-        
-        for i, result in enumerate(samples):
-            with cols[i]:
-                st.markdown(f"### Sample {result.blind_label}")
-                
-                if result.audio_data:
-                    # Audio player
-                    st.audio(result.audio_data, format="audio/mp3")
-                    st.caption(f"Sample {result.blind_label}")
+        # Display samples in rows of 4
+        for i in range(0, len(samples), 4):
+            cols = st.columns(4)
+            for j, result in enumerate(samples[i:i+4]):
+                with cols[j]:
+                    st.markdown(f"### Sample {result.blind_label}")
+                    
+                    if result.audio_data:
+                        # Audio player
+                        st.audio(result.audio_data, format="audio/mp3")
+                        st.caption(f"Sample {result.blind_label}")
         
         st.divider()
         
@@ -643,7 +637,7 @@ def display_blind_test_samples():
             key="blind_vote_radio"
         )
         
-        if st.button("Submit Vote", type="primary", use_container_width=True):
+        if st.button("Submit Vote", type="primary"):
             # Record vote
             selected_label = selected_sample.split()[1]  # Extract label (A, B, C, etc.)
             st.session_state.blind_test_vote_choice = selected_label
@@ -694,21 +688,24 @@ def display_blind_test_samples():
         # Show audio samples with labels
         st.subheader("🔊 Listen Again (with provider names)")
         
-        cols = st.columns(len(samples))
-        for i, result in enumerate(sorted(samples, key=lambda r: r.blind_label)):
-            with cols[i]:
-                is_winner = result.blind_label == st.session_state.blind_test_vote_choice
-                if is_winner:
-                    st.markdown(f"### 🏆 Sample {result.blind_label}")
-                else:
-                    st.markdown(f"### Sample {result.blind_label}")
-                
-                st.markdown(f"**{result.provider.title()}**")
-                st.caption(result.model_name)
-                
-                if result.audio_data:
-                    st.audio(result.audio_data, format="audio/mp3")
-                    st.caption(f"{result.latency_ms:.1f}ms | {result.file_size_bytes/1024:.1f}KB")
+        # Display audio players in rows of 4
+        sorted_samples = sorted(samples, key=lambda r: r.blind_label)
+        for i in range(0, len(sorted_samples), 4):
+            cols = st.columns(4)
+            for j, result in enumerate(sorted_samples[i:i+4]):
+                with cols[j]:
+                    is_winner = result.blind_label == st.session_state.blind_test_vote_choice
+                    if is_winner:
+                        st.markdown(f"### 🏆 Sample {result.blind_label}")
+                    else:
+                        st.markdown(f"### Sample {result.blind_label}")
+                    
+                    st.markdown(f"**{result.provider.title()}**")
+                    st.caption(result.model_name)
+                    
+                    if result.audio_data:
+                        st.audio(result.audio_data, format="audio/mp3")
+                        st.caption(f"{result.latency_ms:.1f}ms | {result.file_size_bytes/1024:.1f}KB")
         
         st.divider()
         
