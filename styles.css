@@ -62,18 +62,7 @@
     color: #6642B3 !important;
 }
 
-/* Sliders */
-.stSlider [data-baseweb="slider"] [role="slider"] {
-    background-color: #6642B3 !important;
-}
 
-.stSlider [data-baseweb="slider"] [data-testid="stTickBar"] > div:first-child {
-    background-color: #6642B3 !important;
-}
-
-.stSlider [data-baseweb="slider"] > div > div > div:first-child {
-    background: linear-gradient(to right, #6642B3 0%, #6642B3 100%) !important;
-}
 
 /* Text input focus */
 .stTextInput > div > div > input,
@@ -213,8 +202,6 @@ a:hover {
     font-size: 0.7rem !important;
     margin-top: 0.2rem !important;
 }
-
-
 
 /* Make provider list more compact */
 .stSidebar .stMarkdown {
