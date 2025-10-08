@@ -97,17 +97,18 @@ def main():
         else:
             default_page = "Quick Test"
         
-        st.subheader("Navigate to:")
+        st.subheader("Navigator")
         
         pages = ["Quick Test", "Blind Test", "Batch Benchmark", "Results Analysis", "Leaderboard"]
-        default_index = pages.index(default_page) if default_page in pages else 0
         
-        page = st.selectbox(
-            "",
-            pages,
-            index=default_index,
-            label_visibility="collapsed"
-        )
+        # Create navbar-style buttons
+        for i, page_name in enumerate(pages):
+            if st.button(page_name, key=f"nav_{page_name}", use_container_width=True):
+                st.session_state.current_page = page_name
+                st.rerun()
+        
+        # Set the current page
+        page = st.session_state.get("current_page", default_page)
         
         st.divider()
         

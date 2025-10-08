@@ -133,6 +133,35 @@ a:hover {
     margin: 0.2rem 0 !important;
 }
 
+/* Navbar-style buttons in sidebar */
+.stSidebar .stButton > button {
+    margin: 0.05rem 0 !important;
+    text-align: left !important;
+    font-size: 0.8rem !important;
+    padding: 0.4rem 0.6rem !important;
+    border-radius: 4px !important;
+    transition: all 0.2s ease !important;
+    background-color: transparent !important;
+    color: #4a4a4a !important;
+    border: 1px solid #e0e0e0 !important;
+    box-shadow: none !important;
+}
+
+.stSidebar .stButton > button:hover {
+    background-color: #f5f5f5 !important;
+    color: #6642B3 !important;
+    border-color: #6642B3 !important;
+    transform: translateX(3px) !important;
+}
+
+/* Active page styling */
+.stSidebar .stButton > button:contains("→") {
+    background-color: #f0f0f0 !important;
+    color: #6642B3 !important;
+    border-color: #6642B3 !important;
+    font-weight: 600 !important;
+}
+
 .stSidebar .stError {
     font-size: 0.8rem !important;
     padding: 0.3rem !important;
@@ -140,8 +169,9 @@ a:hover {
 }
 
 .stSidebar .stSubheader {
-    font-size: 1rem !important;
-    margin-bottom: 0.3rem !important;
+    font-size: 1.2rem !important;
+    margin-bottom: 0.5rem !important;
+    font-weight: 700 !important;
 }
 
 .stSidebar .stCode {
