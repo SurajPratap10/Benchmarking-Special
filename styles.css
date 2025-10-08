@@ -87,47 +87,7 @@
     box-shadow: 0 0 0 0.2rem rgba(102, 66, 179, 0.25) !important;
 }
 
-/* Force text area focus to purple */
-.stTextArea > div > div > textarea:focus {
-    border-color: #6642B3 !important;
-    outline: none !important;
-}
-
-/* Override any pink/red focus colors */
-.stTextArea > div > div > textarea:focus,
-.stTextArea > div > div > textarea:active {
-    border-color: #6642B3 !important;
-}
-
-/* More specific text area selectors */
-.stTextArea textarea:focus,
-.stTextArea textarea:active,
-.stTextArea [data-baseweb="textarea"]:focus,
-.stTextArea [data-baseweb="textarea"]:active {
-    border-color: #6642B3 !important;
-    outline: none !important;
-}
-
-/* Override Streamlit's default focus colors */
-.stTextArea > div > div > div > textarea:focus {
-    border-color: #6642B3 !important;
-}
-
-/* Nuclear option - override all textarea focus */
-textarea:focus,
-[data-baseweb="textarea"]:focus,
-.stTextArea *:focus {
-    border-color: #6642B3 !important;
-    outline: none !important;
-}
-
-/* Remove pink/red borders completely */
-.stTextArea textarea,
-.stTextArea [data-baseweb="textarea"],
-textarea {
-    border: 0.5px solid #d0d0d0 !important;
-}
-
+/* Text area styling */
 .stTextArea textarea:focus,
 .stTextArea [data-baseweb="textarea"]:focus,
 textarea:focus {
@@ -189,26 +149,48 @@ a:hover {
     padding: 0.4rem 0.6rem !important;
     border-radius: 4px !important;
     transition: all 0.2s ease !important;
-    background-color: transparent !important;
-    color: #4a4a4a !important;
-    border: 1px solid #e0e0e0 !important;
+    background-color: #f5f5f5 !important;
+    color: #6642B3 !important;
+    border: 1px solid #6642B3 !important;
     box-shadow: none !important;
 }
 
 .stSidebar .stButton > button:hover {
-    background-color: #f5f5f5 !important;
+    background-color: #ffffff !important;
     color: #6642B3 !important;
     border-color: #6642B3 !important;
+    transform: translateX(1px) !important;
+}
+
+.stSidebar .stButton > button:active {
     transform: translateX(3px) !important;
 }
 
-/* Active page styling */
-.stSidebar .stButton > button:contains("→") {
-    background-color: #f0f0f0 !important;
+/* Dark theme navbar buttons */
+[data-theme="dark"] .stSidebar .stButton > button,
+.dark .stSidebar .stButton > button {
     color: #6642B3 !important;
     border-color: #6642B3 !important;
-    font-weight: 600 !important;
+    background-color: #2a2a2a !important;
 }
+
+[data-theme="dark"] .stSidebar .stButton > button:hover,
+.dark .stSidebar .stButton > button:hover {
+    background-color: #2a2a2a !important;
+    color: #6642B3 !important;
+    border-color: #6642B3 !important;
+}
+
+/* Dark theme navigation button text */
+[data-theme="dark"] .stSidebar .stButton > button,
+[data-theme="dark"] .stSidebar .stButton > button span,
+[data-theme="dark"] .stSidebar .stButton > button div,
+.dark .stSidebar .stButton > button,
+.dark .stSidebar .stButton > button span,
+.dark .stSidebar .stButton > button div {
+    color: #ffffff !important;
+}
+
 
 .stSidebar .stError {
     font-size: 0.8rem !important;
