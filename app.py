@@ -5,6 +5,7 @@ import streamlit as st
 import asyncio
 import pandas as pd
 import plotly.express as px
+import json
 from datetime import datetime
 from typing import Dict, List, Any
 
@@ -20,6 +21,7 @@ from tts_providers import TTSProviderFactory, TTSRequest
 import visualizations
 from security import session_manager
 from geolocation import geo_service
+from database import BenchmarkDatabase
 
 # Page configuration
 st.set_page_config(
@@ -46,6 +48,9 @@ if "dataset_generator" not in st.session_state:
 
 if "results" not in st.session_state:
     st.session_state.results = []
+
+# Initialize database
+db = BenchmarkDatabase()
 
 if "config_valid" not in st.session_state:
     st.session_state.config_valid = False
@@ -784,27 +789,6 @@ def prepare_test_dataset(sample_count: int, categories: List[str], lengths: List
             avg_complexity = sum(s.complexity_score for s in final_samples) / len(final_samples)
             st.metric("Avg Complexity", f"{avg_complexity:.2f}")
         
-        # Show sample breakdown
-        with st.expander("📋 Sample Breakdown"):
-            breakdown_data = []
-            category_counts = {}
-            length_counts = {}
-            
-            for sample in final_samples:
-                category_counts[sample.category] = category_counts.get(sample.category, 0) + 1
-                length_counts[sample.length_category] = length_counts.get(sample.length_category, 0) + 1
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.write("**By Category:**")
-                for category, count in category_counts.items():
-                    st.write(f"- {category}: {count}")
-            
-            with col2:
-                st.write("**By Length:**")
-                for length, count in length_counts.items():
-                    st.write(f"- {length}: {count}")
     
     else:
         st.warning("No samples match the selected criteria. Try adjusting your filters.")
@@ -879,26 +863,51 @@ def results_analysis_page():
     st.header("📈 Results Analysis")
     st.markdown("Analyze benchmark results with detailed metrics and comparisons")
     
-    if not st.session_state.results:
+    # Load results from database instead of session state
+    db_results = db.get_recent_results(limit=1000)
+    
+    if db_results.empty:
         st.info("No benchmark results available. Run a benchmark first.")
         return
+    
+    # Convert database results to BenchmarkResult objects
+    results = []
+    for _, row in db_results.iterrows():
+        result = BenchmarkResult(
+            test_id=row.get('test_id', ''),
+            provider=row.get('provider', ''),
+            sample_id=row.get('sample_id', ''),
+            text=row.get('text', ''),
+            voice=row.get('voice', ''),
+            success=bool(row.get('success', False)),
+            latency_ms=float(row.get('latency_ms', 0)),
+            file_size_bytes=int(row.get('file_size_bytes', 0)),
+            error_message=row.get('error_message'),
+            timestamp=row.get('timestamp', ''),
+            metadata=json.loads(row.get('metadata', '{}')) if row.get('metadata') else {},
+            iteration=0,
+            location_country=row.get('location_country', ''),
+            location_city=row.get('location_city', ''),
+            location_region=row.get('location_region', '')
+        )
+        results.append(result)
     
     # Filter controls
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        providers = list(set(r.provider for r in st.session_state.results))
+        providers = list(set(r.provider for r in results))
         selected_providers = st.multiselect("Filter by provider:", providers, default=providers)
     
     with col2:
-        categories = list(set(r.metadata.get("category", "unknown") for r in st.session_state.results))
+        categories = list(set(r.metadata.get("category", "unknown") for r in results))
         selected_categories = st.multiselect("Filter by category:", categories, default=categories)
     
     with col3:
         success_filter = st.selectbox("Success filter:", ["All", "Successful only", "Failed only"])
     
     # Filter results
-    filtered_results = st.session_state.results
+    filtered_results = results
     
     if selected_providers:
         filtered_results = [r for r in filtered_results if r.provider in selected_providers]
