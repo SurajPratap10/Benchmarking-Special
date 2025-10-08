@@ -66,6 +66,56 @@
     color: #262730 !important;
 }
 
+/* Force light theme on ALL input elements */
+input,
+textarea,
+select,
+[data-baseweb="input"],
+[data-baseweb="textarea"],
+[data-baseweb="select"],
+[data-baseweb="multiselect"],
+.stTextInput input,
+.stTextArea textarea,
+.stSelectbox select,
+.stSelectbox [data-baseweb="select"],
+.stMultiselect [data-baseweb="select"],
+.stSlider [data-baseweb="slider"] {
+    background-color: #ffffff !important;
+    color: #262730 !important;
+    border-color: #d0d0d0 !important;
+}
+
+/* Force light theme on dropdowns and select boxes */
+.stSelectbox > div > div,
+.stMultiselect > div > div,
+[data-baseweb="select"] > div,
+[data-baseweb="multiselect"] > div {
+    background-color: #ffffff !important;
+    color: #262730 !important;
+    border-color: #d0d0d0 !important;
+}
+
+/* Force light theme on dropdown options */
+[data-baseweb="menu"],
+[data-baseweb="menu"] > div,
+[data-baseweb="menu"] li,
+[data-baseweb="menu"] a {
+    background-color: #ffffff !important;
+    color: #262730 !important;
+}
+
+/* Override any dark theme on form elements */
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select,
+.dark input,
+.dark textarea,
+.dark select {
+    background-color: #ffffff !important;
+    color: #262730 !important;
+    border-color: #d0d0d0 !important;
+}
+
 /* Primary buttons */
 .stButton > button {
     background-color: #6642B3 !important;
