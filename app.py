@@ -150,7 +150,7 @@ def main():
 def quick_test_page():
     """Quick test page for single TTS comparisons"""
     
-    st.header("🚀 Quick Test")
+    st.header("🔥 Quick Test")
     st.markdown("Test a single text prompt across multiple TTS providers")
     
     # Initialize session state for quick test results
@@ -333,7 +333,7 @@ def display_quick_test_results(results: List[BenchmarkResult]):
             st.plotly_chart(fig_size, use_container_width=True)
     
     # Audio playback
-    st.subheader("Audio Playback")
+    st.subheader("🎧 Audio Playback")
     
     if len(successful_results) >= 1:
         st.markdown("**Listen to the audio samples:**")
@@ -355,7 +355,7 @@ def display_quick_test_results(results: List[BenchmarkResult]):
 def blind_test_page():
     """Blind test page for unbiased audio quality comparison"""
     
-    st.header("🎭 Blind Test")
+    st.header("🎯 Blind Test")
     st.markdown("Compare TTS audio quality without knowing which provider generated each sample")
     
     # Get configuration status
@@ -389,7 +389,7 @@ def blind_test_page():
         st.session_state.blind_test_vote_choice = None
     
     # Test setup section
-    st.subheader("🔧 Test Setup")
+        st.subheader("⚙️ Test Setup")
     
     col1, col2 = st.columns([2, 1])
     
@@ -508,7 +508,7 @@ def display_blind_test_samples():
     
     if not st.session_state.blind_test_voted:
         # Voting phase - don't reveal providers
-        st.subheader("🔊 Listen and Vote")
+        st.subheader("🎧 Listen and Vote")
         st.markdown("**Listen to each sample and vote for the one with the best quality:**")
         
         # Display samples in rows of 4
@@ -590,7 +590,7 @@ def display_blind_test_samples():
         st.dataframe(df, use_container_width=True, hide_index=True)
         
         # Show audio samples with labels
-        st.subheader("🔊 Listen Again (with provider names)")
+        st.subheader("🎧 Listen Again (with provider names)")
         
         # Display audio players in rows of 4
         sorted_samples = sorted(samples, key=lambda r: r.blind_label)
@@ -659,7 +659,7 @@ def handle_blind_test_vote(winner_result: BenchmarkResult, loser_result: Benchma
 def batch_benchmark_page():
     """Batch benchmark page for comprehensive testing"""
     
-    st.header("📈 Batch Benchmark")
+    st.header("⚙️ Batch Benchmark")
     st.markdown("Run comprehensive benchmarks across multiple samples and providers")
     
     # Get configuration status
@@ -876,7 +876,7 @@ def display_benchmark_summary(results: List[BenchmarkResult]):
 def results_analysis_page():
     """Results analysis page"""
     
-    st.header("📊 Results Analysis")
+    st.header("📈 Results Analysis")
     st.markdown("Analyze benchmark results with detailed metrics and comparisons")
     
     if not st.session_state.results:
@@ -928,7 +928,7 @@ def display_analysis_charts(results: List[BenchmarkResult]):
         return
     
     # Latency distribution
-    st.subheader("⏱️ Latency Distribution")
+    st.subheader("⏰ Latency Distribution")
     fig_latency = visualizations.create_latency_distribution(successful_results)
     st.plotly_chart(fig_latency, use_container_width=True)
     
