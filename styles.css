@@ -6,6 +6,66 @@
     font-family: 'Figtree', sans-serif !important;
 }
 
+/* Force light theme - disable dark theme completely */
+:root {
+    --background-color: #ffffff !important;
+    --text-color: #262730 !important;
+    --secondary-background-color: #f0f2f6 !important;
+    --border-color: #e6e9ef !important;
+}
+
+/* Override Streamlit's dark theme variables */
+.stApp {
+    background-color: #ffffff !important;
+    color: #262730 !important;
+}
+
+/* Force light theme on all Streamlit components */
+.stApp > div,
+.stApp > div > div,
+.stSidebar,
+.stMain,
+.stHeader,
+.stSubheader,
+.stMarkdown,
+.stTextInput,
+.stTextArea,
+.stSelectbox,
+.stMultiselect,
+.stButton,
+.stSlider,
+.stDataFrame,
+.stSuccess,
+.stInfo,
+.stWarning,
+.stError {
+    background-color: #ffffff !important;
+    color: #262730 !important;
+}
+
+/* Override any dark theme classes */
+[data-theme="dark"],
+.dark,
+.theme-dark,
+.stApp[data-theme="dark"] {
+    background-color: #ffffff !important;
+    color: #262730 !important;
+}
+
+/* Force light theme on sidebar */
+.stSidebar {
+    background-color: #f0f2f6 !important;
+    color: #262730 !important;
+}
+
+.stSidebar .stMarkdown,
+.stSidebar .stSubheader,
+.stSidebar .stSuccess,
+.stSidebar .stError {
+    background-color: transparent !important;
+    color: #262730 !important;
+}
+
 /* Primary buttons */
 .stButton > button {
     background-color: #6642B3 !important;
