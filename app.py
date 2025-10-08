@@ -90,12 +90,7 @@ def main():
     # Sidebar for navigation and configuration
     with st.sidebar:
         # Navigation - moved to top
-        # Check if there's a navigation request from a button
-        if "navigate_to" in st.session_state and st.session_state.navigate_to:
-            default_page = st.session_state.navigate_to
-            st.session_state.navigate_to = None  # Clear after using
-        else:
-            default_page = "Quick Test"
+        default_page = "Quick Test"
         
         st.subheader("Navigator")
         
@@ -107,8 +102,12 @@ def main():
                 st.session_state.current_page = page_name
                 st.rerun()
         
-        # Set the current page
-        page = st.session_state.get("current_page", default_page)
+        # Set the current page - handle both old and new navigation systems
+        if "navigate_to" in st.session_state and st.session_state.navigate_to:
+            page = st.session_state.navigate_to
+            st.session_state.navigate_to = None  # Clear after using
+        else:
+            page = st.session_state.get("current_page", default_page)
         
         st.divider()
         
@@ -627,7 +626,7 @@ def display_blind_test_samples():
     with col2:
             if st.button("View Leaderboard", use_container_width=True):
                 # Navigate to leaderboard by setting session state
-                st.session_state.navigate_to = "Leaderboard"
+                st.session_state.current_page = "Leaderboard"
                 st.rerun()
 
 def handle_blind_test_vote(winner_result: BenchmarkResult, loser_result: BenchmarkResult, save_vote: bool = True):
