@@ -1,3 +1,11 @@
+/* Import Figtree font */
+@import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
+
+/* Apply Figtree font globally */
+* {
+    font-family: 'Figtree', sans-serif !important;
+}
+
 /* Primary buttons */
 .stButton > button {
     background-color: #6642B3 !important;
