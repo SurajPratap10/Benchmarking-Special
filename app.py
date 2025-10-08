@@ -99,7 +99,7 @@ def main():
         
         st.subheader("Navigator")
         
-        pages = ["Quick Test", "Blind Test", "Batch Benchmark", "Results Analysis", "Leaderboard"]
+        pages = ["Leaderboard", "Quick Test", "Blind Test", "Batch Benchmark", "Results Analysis"]
         
         # Create navbar-style buttons
         for i, page_name in enumerate(pages):
@@ -112,7 +112,7 @@ def main():
             page = st.session_state.navigate_to
             st.session_state.navigate_to = None  # Clear after using
         else:
-            page = st.session_state.get("current_page", default_page)
+            page = st.session_state.get("current_page", "Leaderboard")
         
         st.divider()
         
