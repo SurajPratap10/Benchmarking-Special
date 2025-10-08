@@ -971,7 +971,7 @@ def leaderboard_page():
     """ELO leaderboard page with persistent data"""
     
     st.header("🏆 Leaderboard")
-    st.markdown("ELO-based rankings of TTS providers (Persistent Data)")
+    st.markdown("ELO-based rankings of TTS providers")
     
     # Get persistent leaderboard data
     leaderboard = st.session_state.benchmark_engine.get_leaderboard()
