@@ -193,15 +193,15 @@ def quick_test_page():
         word_count = len(text_input.split())
     
     # Provider selection - only show configured providers
-        selected_providers = st.multiselect(
-            "Select providers:",
+    selected_providers = st.multiselect(
+        "Select providers:",
         configured_providers,
         default=configured_providers,
         help=f"Available providers: {', '.join([TTS_PROVIDERS[p].name for p in configured_providers])}"
-        )
+    )
         
     # Voice selection - display in rows of 4 columns
-        voice_options = {}
+    voice_options = {}
     if selected_providers:
         st.markdown("**Voice Selection:**")
         
