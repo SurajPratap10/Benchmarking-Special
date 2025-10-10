@@ -183,14 +183,14 @@ def quick_test_page():
         return
     
     # Text input (full width)
-        text_input = st.text_area(
-            "Enter text to synthesize:",
-            value="Hello, this is a test of the text-to-speech system. How does it sound?",
-            height=100,
-            max_chars=1000
-        )
-        
-        word_count = len(text_input.split())
+    text_input = st.text_area(
+        "Enter text to synthesize:",
+        value="Hello, this is a test of the text-to-speech system. How does it sound?",
+        height=100,
+        max_chars=1000
+    )
+    
+    word_count = len(text_input.split())
     
     # Provider selection - only show configured providers
     selected_providers = st.multiselect(
@@ -217,17 +217,17 @@ def quick_test_page():
                         key=f"voice_{provider}"
                     )
         
-        # Test button
+    # Test button
     if st.button("Generate & Compare", type="primary"):
-            if text_input and selected_providers:
-                # Validate input with security checks
-                valid, error_msg = session_manager.validate_request(text_input)
-                if valid:
-                    run_quick_test(text_input, selected_providers, voice_options)
-                else:
-                    st.error(f"❌ {error_msg}")
+        if text_input and selected_providers:
+            # Validate input with security checks
+            valid, error_msg = session_manager.validate_request(text_input)
+            if valid:
+                run_quick_test(text_input, selected_providers, voice_options)
             else:
-                st.error("Please enter text and select at least one provider.")
+                st.error(f"❌ {error_msg}")
+        else:
+            st.warning("Please enter text and select at least one provider.")
     
     # Display results BELOW the input section (outside button context)
     if st.session_state.quick_test_results is not None:
