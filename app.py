@@ -1091,7 +1091,7 @@ def roi_calculator_page():
     
     # Create the ROI calculator HTML with embedded scripts
     roi_calculator_html = '''
-    <div id="tts-tool" style="width: 100%; min-height: 1200px;"></div>
+    <div id="tts-tool" style="width: 100%; min-height: 1600px;"></div>
     <script src="https://cdn.jsdelivr.net/gh/ShreyashCJ/roi_calculator/3.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", function () {
@@ -1107,8 +1107,8 @@ def roi_calculator_page():
     </script>
     '''
     
-    # Use Streamlit components to render the HTML with increased height
-    components.html(roi_calculator_html, height=1400, scrolling=False)
+    # Use Streamlit components to render the HTML with increased height and scrolling
+    components.html(roi_calculator_html, height=1600, scrolling=True)
     
     # Add some additional information below the calculator with proper spacing
     st.markdown("---")
