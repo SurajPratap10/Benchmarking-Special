@@ -1091,7 +1091,7 @@ def roi_calculator_page():
     
     # Create the ROI calculator HTML with embedded scripts
     roi_calculator_html = '''
-    <div id="tts-tool" style="width: 100%; min-height: 1200px;"></div>
+    <div id="tts-tool"></div>
     <script src="https://cdn.jsdelivr.net/gh/ShreyashCJ/roi_calculator/3.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", function () {
