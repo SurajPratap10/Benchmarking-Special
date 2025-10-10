@@ -1087,7 +1087,7 @@ def roi_calculator_page():
     """ROI Calculator page for TTS provider cost analysis"""
     
     st.header("💰 ROI Calculator")
-    st.markdown("Calculate the return on investment for different TTS providers based on your usage patterns.")
+    st.markdown("Calculate the return on investment for different TTS providers based on your usage patterns and optimize your costs.")
     
     # Create the ROI calculator HTML with embedded scripts
     roi_calculator_html = '''
