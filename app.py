@@ -1107,8 +1107,8 @@ def roi_calculator_page():
     </script>
     '''
     
-    # Use Streamlit components to render the HTML with proper height
-    components.html(roi_calculator_html, height=1200, scrolling=False)
+    # Use Streamlit components to render the HTML with increased height
+    components.html(roi_calculator_html, height=1400, scrolling=False)
     
     # Add some additional information below the calculator with proper spacing
     st.markdown("---")
