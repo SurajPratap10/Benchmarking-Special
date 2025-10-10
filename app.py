@@ -1087,21 +1087,10 @@ def roi_calculator_page():
     """ROI Calculator page for TTS provider cost analysis"""
     
     st.header("💰 ROI Calculator")
-    st.markdown("Calculate the return on investment for different TTS providers based on your usage patterns and optimize your costs.")
+    st.markdown("Calculate the return on investment for different TTS providers based on your usage patterns.")
     
     # Create the ROI calculator HTML with embedded scripts
     roi_calculator_html = '''
-    <style>
-      #tts-tool {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        gap: 20px !important;
-      }
-      #tts-tool > div {
-        flex: 1 1 calc(50% - 10px) !important;
-        min-width: 300px !important;
-      }
-    </style>
     <div id="tts-tool"></div>
     <script src="https://cdn.jsdelivr.net/gh/ShreyashCJ/roi_calculator/3.js"></script>
     <script>
