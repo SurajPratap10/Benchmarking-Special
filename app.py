@@ -2,6 +2,7 @@
 TTS Benchmarking Tool - Streamlit Application
 """
 import streamlit as st
+import streamlit.components.v1 as components
 import asyncio
 import pandas as pd
 import plotly.express as px
@@ -99,7 +100,7 @@ def main():
         
         st.subheader("Navigator")
         
-        pages = ["Leaderboard", "Quick Test", "Blind Test", "Batch Benchmark", "Results Analysis"]
+        pages = ["Leaderboard", "Quick Test", "Blind Test", "Batch Benchmark", "Results Analysis", "ROI Calculator"]
         
         # Create navbar-style buttons
         for i, page_name in enumerate(pages):
@@ -151,6 +152,8 @@ def main():
         results_analysis_page()
     elif page == "Leaderboard":
         leaderboard_page()
+    elif page == "ROI Calculator":
+        roi_calculator_page()
 
 def quick_test_page():
     """Quick test page for single TTS comparisons"""
@@ -180,25 +183,25 @@ def quick_test_page():
         return
     
     # Text input (full width)
-    text_input = st.text_area(
-        "Enter text to synthesize:",
-        value="Hello, this is a test of the text-to-speech system. How does it sound?",
-        height=100,
-        max_chars=1000
-    )
-    
-    word_count = len(text_input.split())
+        text_input = st.text_area(
+            "Enter text to synthesize:",
+            value="Hello, this is a test of the text-to-speech system. How does it sound?",
+            height=100,
+            max_chars=1000
+        )
+        
+        word_count = len(text_input.split())
     
     # Provider selection - only show configured providers
-    selected_providers = st.multiselect(
-        "Select providers:",
+        selected_providers = st.multiselect(
+            "Select providers:",
         configured_providers,
         default=configured_providers,
         help=f"Available providers: {', '.join([TTS_PROVIDERS[p].name for p in configured_providers])}"
-    )
-    
+        )
+        
     # Voice selection - display in rows of 4 columns
-    voice_options = {}
+        voice_options = {}
     if selected_providers:
         st.markdown("**Voice Selection:**")
         
@@ -213,18 +216,18 @@ def quick_test_page():
                         voices,
                         key=f"voice_{provider}"
                     )
-    
-    # Test button
+        
+        # Test button
     if st.button("Generate & Compare", type="primary"):
-        if text_input and selected_providers:
-            # Validate input with security checks
-            valid, error_msg = session_manager.validate_request(text_input)
-            if valid:
-                run_quick_test(text_input, selected_providers, voice_options)
+            if text_input and selected_providers:
+                # Validate input with security checks
+                valid, error_msg = session_manager.validate_request(text_input)
+                if valid:
+                    run_quick_test(text_input, selected_providers, voice_options)
+                else:
+                    st.error(f"❌ {error_msg}")
             else:
-                st.error(f"❌ {error_msg}")
-        else:
-            st.error("Please enter text and select at least one provider.")
+                st.error("Please enter text and select at least one provider.")
     
     # Display results BELOW the input section (outside button context)
     if st.session_state.quick_test_results is not None:
@@ -748,7 +751,7 @@ def prepare_test_dataset(sample_count: int, categories: List[str], lengths: List
         
         # Generate more samples to ensure we have enough after filtering
         all_samples = st.session_state.dataset_generator.generate_dataset(sample_count * 4)
-        
+            
         # Filter samples that match criteria
         matching_samples = []
         for sample in all_samples:
@@ -1079,6 +1082,69 @@ def leaderboard_page():
             st.dataframe(vote_df, use_container_width=True, hide_index=True)
     else:
         st.info("No user votes yet. Vote in Quick Test to start building preference data!")
+
+def roi_calculator_page():
+    """ROI Calculator page for TTS provider cost analysis"""
+    
+    st.header("💰 ROI Calculator")
+    st.markdown("Calculate the return on investment for different TTS providers based on your usage patterns.")
+    
+    # Create the ROI calculator HTML with embedded scripts
+    roi_calculator_html = '''
+    <div id="tts-tool" style="width: 100%; min-height: 1200px;"></div>
+    <script src="https://cdn.jsdelivr.net/gh/ShreyashCJ/roi_calculator/3.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const roiNamespace = window["roi-calculator"];
+        if (roiNamespace && typeof roiNamespace.default === "function") {
+          roiNamespace.default(document.getElementById("tts-tool"), {});
+        } else if (typeof roiNamespace === "function") {
+          roiNamespace(document.getElementById("tts-tool"), {});
+        } else {
+          console.error("roi-calculator function not loaded.", roiNamespace);
+        }
+      });
+    </script>
+    '''
+    
+    # Use Streamlit components to render the HTML with increased height
+    components.html(roi_calculator_html, height=1400, scrolling=False)
+    
+    # Add some additional information below the calculator with proper spacing
+    st.markdown("---")
+    st.markdown("### 💡 Tips for Using the ROI Calculator")
+    
+    # Add bottom margin for better spacing
+    st.markdown('<div style="margin-bottom: 2rem;"></div>', unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("""
+        **Technology Selection**
+        - Choose between Highest Quality, Balanced, or Cost Effective tabs
+        - Compare different LLM, TTS, and STT providers
+        - See real-time cost updates as you change selections
+        """)
+    
+    with col2:
+        st.markdown("""
+        **Cost Breakdown**
+        - Switch between per minute, per 1k characters, or custom pricing
+        - View detailed cost breakdowns for each component
+        - Optimize your configuration for best ROI
+        """)
+    
+    with col3:
+        st.markdown("""
+        **Parameters**
+        - Adjust LLM input size and call duration
+        - Set AI agent talk time percentage
+        - Fine-tune your usage patterns for accurate calculations
+        """)
+    
+    # Add extra bottom margin
+    st.markdown('<div style="margin-bottom: 3rem;"></div>', unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
