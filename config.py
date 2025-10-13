@@ -36,6 +36,15 @@ TTS_PROVIDERS = {
         supports_streaming=True,
         model_name="Murf Falcon Turbo"
     ),
+    "murf_falcon_oct13": TTSConfig(
+        name="Murf Falcon Oct 13",
+        api_key_env="MURF_API_KEY",
+        base_url="https://api.murf.ai/v1/speech/stream",
+        supported_voices=["en-US-marcus", "en-US-natalie", "en-US-miles", "en-US-amara", "en-US-maverick", "en-US-ken", "en-US-terrell"],
+        max_chars=3000,
+        supports_streaming=True,
+        model_name="Murf Falcon Oct 13"
+    ),
     "deepgram": TTSConfig(
         name="Deepgram",
         api_key_env="DEEPGRAM_API_KEY",

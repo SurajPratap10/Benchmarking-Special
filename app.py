@@ -496,8 +496,8 @@ def generate_blind_test_samples(text: str, providers: List[str]):
     # Randomize the order of samples
     random.shuffle(results)
     
-    # Assign anonymous labels (A, B, C, etc.)
-    labels = ['A', 'B', 'C', 'D', 'E', 'F']
+    # Assign anonymous labels (A, B, C, etc.) - dynamically generate based on number of results
+    labels = [chr(65 + i) for i in range(len(results))]  # Generates A, B, C, D, E, F, G, H, etc.
     for i, result in enumerate(results):
         result.blind_label = labels[i]
     
