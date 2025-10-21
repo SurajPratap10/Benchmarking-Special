@@ -46,13 +46,22 @@ TTS_PROVIDERS = {
         model_name="Murf Falcon Oct 13"
     ),
     "deepgram": TTSConfig(
-        name="Deepgram",
+        name="Deepgram Aura 1",
         api_key_env="DEEPGRAM_API_KEY",
         base_url="https://api.deepgram.com/v1/speak",
         supported_voices=["aura-asteria-en", "aura-luna-en", "aura-stella-en", "aura-athena-en", "aura-hera-en", "aura-orion-en"],
         max_chars=2000,
         supports_streaming=True,
-        model_name="Deepgram Aura (v1 API)"
+        model_name="aura-1"
+    ),
+    "deepgram_aura2": TTSConfig(
+        name="Deepgram Aura 2",
+        api_key_env="DEEPGRAM_API_KEY",
+        base_url="https://api.deepgram.com/v1/speak",
+        supported_voices=["aura-2-asteria-en", "aura-2-luna-en", "aura-2-stella-en", "aura-2-athena-en", "aura-2-hera-en", "aura-2-orion-en"],
+        max_chars=2000,
+        supports_streaming=True,
+        model_name="aura-2"
     ),
     "elevenlabs": TTSConfig(
         name="ElevenLabs Flash",

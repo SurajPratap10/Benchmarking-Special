@@ -489,7 +489,7 @@ class MurfFalconOct13TTSProvider(TTSProvider):
         return self.config.supported_voices
 
 class DeepgramTTSProvider(TTSProvider):
-    """Deepgram TTS provider implementation"""
+    """Deepgram Aura 1 TTS provider implementation"""
     
     def __init__(self):
         super().__init__("deepgram")
@@ -594,6 +594,114 @@ class DeepgramTTSProvider(TTSProvider):
     
     def get_available_voices(self) -> list:
         """Get available Deepgram voices"""
+        return self.config.supported_voices
+
+class DeepgramAura2TTSProvider(TTSProvider):
+    """Deepgram Aura 2 TTS provider implementation"""
+    
+    def __init__(self):
+        super().__init__("deepgram_aura2")
+    
+    async def generate_speech(self, request: TTSRequest) -> TTSResult:
+        """Generate speech using Deepgram Aura 2 TTS API"""
+        start_time = time.time()
+        
+        # Validate request
+        is_valid, error_msg = self.validate_request(request)
+        if not is_valid:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=0,
+                file_size_bytes=0,
+                error_message=error_msg,
+                metadata={}
+            )
+        
+        headers = {
+            "Authorization": f"Token {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        # Deepgram Aura 2 TTS API payload structure
+        payload = {
+            "text": request.text
+        }
+        
+        # Add query parameters to URL
+        params = {
+            "model": request.voice,
+            "encoding": "mp3" if request.format == "mp3" else "linear16"
+        }
+        
+        # Only add sample_rate for non-MP3 formats
+        if request.format != "mp3":
+            params["sample_rate"] = "24000"
+        
+        # Build URL with parameters
+        url_with_params = f"{self.config.base_url}?" + "&".join([f"{k}={v}" for k, v in params.items()])
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url_with_params,
+                    headers=headers,
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
+                    end_time = time.time()
+                    latency_ms = (end_time - start_time) * 1000
+                    
+                    if response.status == 200:
+                        # Deepgram returns audio data directly
+                        audio_data = await response.read()
+                        return TTSResult(
+                            success=True,
+                            audio_data=audio_data,
+                            latency_ms=latency_ms,
+                            file_size_bytes=len(audio_data),
+                            error_message=None,
+                            metadata={
+                                "voice": request.voice,
+                                "speed": request.speed,
+                                "format": request.format,
+                                "provider": self.provider_id,
+                                "model": request.voice,
+                                "sample_rate": 24000
+                            }
+                        )
+                    else:
+                        error_text = await response.text()
+                        return TTSResult(
+                            success=False,
+                            audio_data=None,
+                            latency_ms=latency_ms,
+                            file_size_bytes=0,
+                            error_message=f"API Error {response.status}: {error_text}",
+                            metadata={"provider": self.provider_id}
+                        )
+        
+        except asyncio.TimeoutError:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=(time.time() - start_time) * 1000,
+                file_size_bytes=0,
+                error_message="Request timeout",
+                metadata={"provider": self.provider_id}
+            )
+        except Exception as e:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=(time.time() - start_time) * 1000,
+                file_size_bytes=0,
+                error_message=f"Error: {str(e)}",
+                metadata={"provider": self.provider_id}
+            )
+    
+    def get_available_voices(self) -> list:
+        """Get available Deepgram Aura 2 voices"""
         return self.config.supported_voices
 
 class ElevenLabsTTSProvider(TTSProvider):
@@ -958,6 +1066,8 @@ class TTSProviderFactory:
             return MurfFalconOct13TTSProvider()
         elif provider_id == "deepgram":
             return DeepgramTTSProvider()
+        elif provider_id == "deepgram_aura2":
+            return DeepgramAura2TTSProvider()
         elif provider_id == "elevenlabs":
             return ElevenLabsTTSProvider()
         elif provider_id == "openai":

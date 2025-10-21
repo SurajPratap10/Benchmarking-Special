@@ -9,7 +9,7 @@ MURF_API_KEY=your_murf_api_key_here
 # Get from: https://murf.ai/api
 MURF_FALCON_API_KEY=your_murf_falcon_api_key_here
 
-# Deepgram API Key
+# Deepgram API Key (Used for both Aura 1 and Aura 2 models)
 # Get from: https://console.deepgram.com/
 DEEPGRAM_API_KEY=your_deepgram_api_key_here
 
