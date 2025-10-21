@@ -55,13 +55,13 @@ TTS_PROVIDERS = {
         model_name="Deepgram Aura (v1 API)"
     ),
     "elevenlabs": TTSConfig(
-        name="ElevenLabs",
+        name="ElevenLabs Flash",
         api_key_env="ELEVENLABS_API_KEY",
         base_url="https://api.elevenlabs.io/v1/text-to-speech",
         supported_voices=["Rachel", "Domi", "Bella", "Antoni", "Elli", "Josh", "Arnold", "Adam", "Sam"],
         max_chars=5000,
         supports_streaming=True,
-        model_name="ElevenLabs Multilingual v2"
+        model_name="eleven_flash_v2_5"
     ),
     "openai": TTSConfig(
         name="OpenAI",
