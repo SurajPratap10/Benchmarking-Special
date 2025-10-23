@@ -421,7 +421,8 @@ class MurfFalconOct13TTSProvider(TTSProvider):
         payload = {
             "text": request.text,
             "voiceId": request.voice,
-            "audioFormat": request.format or "mp3"
+            "audioFormat": request.format or "mp3",
+            "model": "FALCON"
         }
         
         # Add speed/rate if specified
@@ -516,11 +517,12 @@ class MurfFalconOct23TTSProvider(TTSProvider):
             "Content-Type": "application/json"
         }
         
-        # Murf Falcon Oct 22 API payload structure
+        # Murf Falcon Oct 23 API payload structure
         payload = {
             "text": request.text,
             "voiceId": request.voice,
-            "audioFormat": request.format or "mp3"
+            "audioFormat": request.format or "mp3",
+            "model": "FALCON"
         }
         
         # Add speed/rate if specified
