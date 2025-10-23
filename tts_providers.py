@@ -548,7 +548,7 @@ class MurfFalconOct23TTSProvider(TTSProvider):
                             error_message=None,
                             metadata={
                                 "provider": self.provider_id,
-                                "model": "Murf Falcon Oct 23",
+                                "model": "FALCON",
                                 "voice": request.voice,
                                 "format": request.format or "mp3"
                             }

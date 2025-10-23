@@ -52,7 +52,7 @@ TTS_PROVIDERS = {
         supported_voices=["en-US-marcus", "en-US-natalie", "en-US-miles", "en-US-amara", "en-US-maverick", "en-US-ken", "en-US-terrell"],
         max_chars=3000,
         supports_streaming=True,
-        model_name="Murf Falcon Oct 23"
+        model_name="FALCON"
     ),
     "deepgram": TTSConfig(
         name="Deepgram Aura 1",
