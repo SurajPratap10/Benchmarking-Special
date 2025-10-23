@@ -488,6 +488,105 @@ class MurfFalconOct13TTSProvider(TTSProvider):
         """Get available Murf Falcon Oct 13 voices"""
         return self.config.supported_voices
 
+class MurfFalconOct23TTSProvider(TTSProvider):
+    """Murf Falcon Oct 23 TTS provider implementation (Global Stream Endpoint)"""
+    
+    def __init__(self):
+        super().__init__("murf_falcon_oct23")
+    
+    async def generate_speech(self, request: TTSRequest) -> TTSResult:
+        """Generate speech using Murf Falcon Oct 23 API (Global Stream)"""
+        start_time = time.time()
+        
+        # Validate request
+        is_valid, error_msg = self.validate_request(request)
+        if not is_valid:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=0,
+                file_size_bytes=0,
+                error_message=error_msg,
+                metadata={}
+            )
+        
+        headers = {
+            "api-key": self.api_key,
+            "Content-Type": "application/json"
+        }
+        
+        # Murf Falcon Oct 22 API payload structure
+        payload = {
+            "text": request.text,
+            "voiceId": request.voice,
+            "audioFormat": request.format or "mp3"
+        }
+        
+        # Add speed/rate if specified
+        if request.speed and request.speed != 1.0:
+            payload["rate"] = request.speed
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    self.config.base_url,
+                    headers=headers,
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
+                    latency_ms = (time.time() - start_time) * 1000
+                    
+                    if response.status == 200:
+                        audio_data = await response.read()
+                        file_size = len(audio_data)
+                        
+                        return TTSResult(
+                            success=True,
+                            audio_data=audio_data,
+                            latency_ms=latency_ms,
+                            file_size_bytes=file_size,
+                            error_message=None,
+                            metadata={
+                                "provider": self.provider_id,
+                                "model": "Murf Falcon Oct 23",
+                                "voice": request.voice,
+                                "format": request.format or "mp3"
+                            }
+                        )
+                    else:
+                        error_text = await response.text()
+                        return TTSResult(
+                            success=False,
+                            audio_data=None,
+                            latency_ms=latency_ms,
+                            file_size_bytes=0,
+                            error_message=f"API Error {response.status}: {error_text}",
+                            metadata={"provider": self.provider_id}
+                        )
+        
+        except asyncio.TimeoutError:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=(time.time() - start_time) * 1000,
+                file_size_bytes=0,
+                error_message="Request timeout",
+                metadata={"provider": self.provider_id}
+            )
+        except Exception as e:
+            return TTSResult(
+                success=False,
+                audio_data=None,
+                latency_ms=(time.time() - start_time) * 1000,
+                file_size_bytes=0,
+                error_message=f"Error: {str(e)}",
+                metadata={"provider": self.provider_id}
+            )
+    
+    def get_available_voices(self) -> list:
+        """Get available Murf Falcon Oct 23 voices"""
+        return self.config.supported_voices
+
 class DeepgramTTSProvider(TTSProvider):
     """Deepgram Aura 1 TTS provider implementation"""
     
@@ -1064,6 +1163,8 @@ class TTSProviderFactory:
             return MurfFalconTTSProvider()
         elif provider_id == "murf_falcon_oct13":
             return MurfFalconOct13TTSProvider()
+        elif provider_id == "murf_falcon_oct23":
+            return MurfFalconOct23TTSProvider()
         elif provider_id == "deepgram":
             return DeepgramTTSProvider()
         elif provider_id == "deepgram_aura2":
