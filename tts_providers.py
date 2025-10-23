@@ -5,6 +5,7 @@ import time
 import asyncio
 import aiohttp
 import requests
+import ssl
 from typing import Dict, Any, Optional, Tuple, AsyncGenerator
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
@@ -527,7 +528,13 @@ class MurfFalconOct23TTSProvider(TTSProvider):
             payload["rate"] = request.speed
         
         try:
-            async with aiohttp.ClientSession() as session:
+            # Create SSL context that doesn't verify certificates (for global endpoint)
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+            
+            connector = aiohttp.TCPConnector(ssl=ssl_context)
+            async with aiohttp.ClientSession(connector=connector) as session:
                 async with session.post(
                     self.config.base_url,
                     headers=headers,
