@@ -305,8 +305,7 @@ def display_quick_test_results(results: List[BenchmarkResult]):
             "Model": result.model_name,
             "Location": get_location_display(result),
             "Success": "✅" if result.success else "❌",
-            "Network Latency (ms)": f"{result.latency_1:.1f}" if hasattr(result, 'latency_1') and result.latency_1 > 0 else "N/A",
-            "TTS Latency (ms)": f"{result.latency_ms:.1f}" if result.success else "N/A",
+            "Latency (ms)": f"{result.latency_ms:.1f}" if result.success else "N/A",
             "File Size (KB)": f"{result.file_size_bytes / 1024:.1f}" if result.success else "N/A",
             "Voice": result.voice,
             "Error": result.error_message if not result.success else ""
@@ -358,10 +357,7 @@ def display_quick_test_results(results: List[BenchmarkResult]):
                     if result.audio_data:
                         # Audio player
                         st.audio(result.audio_data, format="audio/mp3")
-                        if hasattr(result, 'latency_1') and result.latency_1 > 0:
-                            st.caption(f"Network: {result.latency_1:.1f}ms | TTS: {result.latency_ms:.1f}ms")
-                        else:
-                            st.caption(f"Latency: {result.latency_ms:.1f}ms")
+                        st.caption(f"Latency: {result.latency_ms:.1f}ms")
                         st.caption(f"Size: {result.file_size_bytes/1024:.1f} KB")
 
 def blind_test_page():
@@ -593,8 +589,7 @@ def display_blind_test_samples():
                 "Provider": result.provider.title(),
                 "Model": result.model_name,
                 "Location": get_location_display(result),
-                "Network Latency (ms)": f"{result.latency_1:.1f}" if hasattr(result, 'latency_1') and result.latency_1 > 0 else "N/A",
-                "TTS Latency (ms)": f"{result.latency_ms:.1f}",
+                "Latency (ms)": f"{result.latency_ms:.1f}",
                 "File Size (KB)": f"{result.file_size_bytes / 1024:.1f}",
                 "Your Choice": "🏆 Winner" if is_winner else ""
             })
@@ -622,8 +617,7 @@ def display_blind_test_samples():
                     
                     if result.audio_data:
                         st.audio(result.audio_data, format="audio/mp3")
-                        ping_info = f"Network: {result.latency_1:.1f}ms | " if hasattr(result, 'latency_1') and result.latency_1 > 0 else ""
-                        st.caption(f"{ping_info}TTS: {result.latency_ms:.1f}ms | {result.file_size_bytes/1024:.1f}KB")
+                        st.caption(f"{result.latency_ms:.1f}ms | {result.file_size_bytes/1024:.1f}KB")
         
         st.divider()
         
@@ -1000,10 +994,9 @@ def leaderboard_page():
     # Enhanced leaderboard table with latency stats
     st.subheader("📊 Current Rankings")
     
-    # Get latency and ping statistics for each provider
+    # Get latency statistics for each provider
     from database import db
     latency_stats = db.get_latency_stats_by_provider()
-    ping_stats = db.get_ping_stats_by_provider()
     
     # Get current location for display
     current_location = geo_service.get_location_string()
@@ -1012,27 +1005,24 @@ def leaderboard_page():
     df_leaderboard = pd.DataFrame(leaderboard)
     df_leaderboard["Provider"] = df_leaderboard["provider"].str.title()
     
-    # Add model names, location, ping and latency stats
+    # Add model names, location, and latency stats
     df_leaderboard["Model"] = df_leaderboard["provider"].apply(get_model_name)
     df_leaderboard["Location"] = location_display
-    df_leaderboard["Avg Network Latency (ms)"] = df_leaderboard["provider"].apply(
-        lambda p: f"{ping_stats.get(p, {}).get('avg_ping', 0):.1f}" if ping_stats.get(p, {}).get('avg_ping', 0) > 0 else "N/A"
-    )
-    df_leaderboard["Avg TTS (ms)"] = df_leaderboard["provider"].apply(
+    df_leaderboard["Avg Latency (ms)"] = df_leaderboard["provider"].apply(
         lambda p: f"{latency_stats.get(p, {}).get('avg_latency', 0):.1f}"
     )
-    df_leaderboard["P95 TTS (ms)"] = df_leaderboard["provider"].apply(
+    df_leaderboard["P95 Latency (ms)"] = df_leaderboard["provider"].apply(
         lambda p: f"{latency_stats.get(p, {}).get('p95_latency', 0):.1f}"
     )
     
     # Format the display columns
     display_df = df_leaderboard[[
-        "rank", "Provider", "Model", "Location", "elo_rating", "Avg Network Latency (ms)", "Avg TTS (ms)", "P95 TTS (ms)",
+        "rank", "Provider", "Model", "Location", "elo_rating", "Avg Latency (ms)", "P95 Latency (ms)",
         "games_played", "wins", "losses", "win_rate"
     ]].copy()
     
     display_df.columns = [
-        "Rank", "Provider", "Model", "Location", "ELO Rating", "Avg Network", "Avg TTS", "P95 TTS",
+        "Rank", "Provider", "Model", "Location", "ELO Rating", "Avg Latency", "P95 Latency",
         "Games", "Wins", "Losses", "Win Rate %"
     ]
     
@@ -1050,17 +1040,13 @@ def leaderboard_page():
         location_display = f"{geo_service.get_country_flag()} {geo_service.get_location_string()}"
         
         for provider, stats in provider_stats.items():
-            # Get ping stats for this provider
-            provider_ping = ping_stats.get(provider, {}).get('avg_ping', 0)
-            
             stats_data.append({
                 "Provider": provider.title(),
                 "Model": get_model_name(provider),
                 "Location": location_display,
                 "Total Tests": stats['total_tests'],
                 "Success Rate %": f"{stats['success_rate']:.1f}%",
-                "Avg Network Latency (ms)": f"{provider_ping:.1f}" if provider_ping > 0 else "N/A",
-                "Avg TTS (ms)": f"{stats['avg_latency']:.1f}",
+                "Avg Latency (ms)": f"{stats['avg_latency']:.1f}",
                 "Avg File Size (KB)": f"{stats['avg_file_size']/1024:.1f}"
             })
         
