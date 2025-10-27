@@ -57,10 +57,6 @@ class BenchmarkDatabase:
             cursor.execute('ALTER TABLE benchmark_results ADD COLUMN location_region TEXT')
         except:
             pass
-        try:
-            cursor.execute('ALTER TABLE benchmark_results ADD COLUMN ttfb_ms REAL DEFAULT 0.0')
-        except:
-            pass
         
         # Create ELO ratings table
         cursor.execute('''
@@ -127,8 +123,8 @@ class BenchmarkDatabase:
             INSERT INTO benchmark_results 
             (test_id, provider, voice, text, success, latency_ms, file_size_bytes, 
              error_message, metadata, timestamp, category, word_count, 
-             location_country, location_city, location_region, ttfb_ms)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             location_country, location_city, location_region)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             test_id or f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             result.provider,
@@ -144,8 +140,7 @@ class BenchmarkDatabase:
             getattr(result.sample, 'word_count', 0) if hasattr(result, 'sample') else 0,
             getattr(result, 'location_country', 'Unknown'),
             getattr(result, 'location_city', 'Unknown'),
-            getattr(result, 'location_region', 'Unknown'),
-            getattr(result, 'ttfb_ms', 0.0)
+            getattr(result, 'location_region', 'Unknown')
         ))
         
         conn.commit()

@@ -305,7 +305,6 @@ def display_quick_test_results(results: List[BenchmarkResult]):
             "Model": result.model_name,
             "Location": get_location_display(result),
             "Success": "✅" if result.success else "❌",
-            "TTFB (ms)": f"{result.ttfb_ms:.1f}" if result.success and hasattr(result, 'ttfb_ms') else "N/A",
             "Latency (ms)": f"{result.latency_ms:.1f}" if result.success else "N/A",
             "File Size (KB)": f"{result.file_size_bytes / 1024:.1f}" if result.success else "N/A",
             "Voice": result.voice,
@@ -358,10 +357,7 @@ def display_quick_test_results(results: List[BenchmarkResult]):
                     if result.audio_data:
                         # Audio player
                         st.audio(result.audio_data, format="audio/mp3")
-                        if hasattr(result, 'ttfb_ms'):
-                            st.caption(f"TTFB: {result.ttfb_ms:.1f}ms | Latency: {result.latency_ms:.1f}ms")
-                        else:
-                            st.caption(f"Latency: {result.latency_ms:.1f}ms")
+                        st.caption(f"Latency: {result.latency_ms:.1f}ms")
                         st.caption(f"Size: {result.file_size_bytes/1024:.1f} KB")
 
 def blind_test_page():
@@ -593,7 +589,6 @@ def display_blind_test_samples():
                 "Provider": result.provider.title(),
                 "Model": result.model_name,
                 "Location": get_location_display(result),
-                "TTFB (ms)": f"{result.ttfb_ms:.1f}" if hasattr(result, 'ttfb_ms') else "N/A",
                 "Latency (ms)": f"{result.latency_ms:.1f}",
                 "File Size (KB)": f"{result.file_size_bytes / 1024:.1f}",
                 "Your Choice": "🏆 Winner" if is_winner else ""
