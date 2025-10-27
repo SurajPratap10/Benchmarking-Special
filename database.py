@@ -58,6 +58,12 @@ class BenchmarkDatabase:
         except:
             pass
         
+        # Add latency_1 column for ping latency (network latency without TTS processing)
+        try:
+            cursor.execute('ALTER TABLE benchmark_results ADD COLUMN latency_1 REAL DEFAULT 0')
+        except:
+            pass
+        
         # Create ELO ratings table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS elo_ratings (
@@ -123,8 +129,8 @@ class BenchmarkDatabase:
             INSERT INTO benchmark_results 
             (test_id, provider, voice, text, success, latency_ms, file_size_bytes, 
              error_message, metadata, timestamp, category, word_count, 
-             location_country, location_city, location_region)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             location_country, location_city, location_region, latency_1)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             test_id or f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             result.provider,
@@ -140,7 +146,8 @@ class BenchmarkDatabase:
             getattr(result.sample, 'word_count', 0) if hasattr(result, 'sample') else 0,
             getattr(result, 'location_country', 'Unknown'),
             getattr(result, 'location_city', 'Unknown'),
-            getattr(result, 'location_region', 'Unknown')
+            getattr(result, 'location_region', 'Unknown'),
+            getattr(result, 'latency_1', 0.0)
         ))
         
         conn.commit()

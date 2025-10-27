@@ -22,6 +22,7 @@ class TTSResult:
     file_size_bytes: int
     error_message: Optional[str]
     metadata: Dict[str, Any]
+    latency_1: float = 0.0  # Network ping latency without TTS processing (like apiping)
 
 @dataclass
 class TTSRequest:
@@ -60,6 +61,33 @@ class TTSProvider(ABC):
             return False, f"Voice '{request.voice}' not supported. Available: {self.config.supported_voices}"
         
         return True, ""
+    
+    async def measure_ping_latency(self) -> float:
+        """Measure network ping latency without TTS processing (like apiping)"""
+        try:
+            start_time = time.time()
+            async with aiohttp.ClientSession() as session:
+                # Send a minimal HEAD or OPTIONS request to measure pure network latency
+                async with session.head(
+                    self.config.base_url,
+                    headers={"api-key": self.api_key} if "murf" in self.provider_id else {"Authorization": f"Token {self.api_key}"},
+                    timeout=aiohttp.ClientTimeout(total=5)
+                ) as response:
+                    latency_ms = (time.time() - start_time) * 1000
+                    return latency_ms
+        except:
+            # If HEAD doesn't work, fallback to minimal GET/POST
+            try:
+                start_time = time.time()
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(
+                        self.config.base_url.replace("/v1/speech/", "/").replace("turbo-stream", "").replace("stream", "").rstrip("/"),
+                        timeout=aiohttp.ClientTimeout(total=5)
+                    ) as response:
+                        latency_ms = (time.time() - start_time) * 1000
+                        return latency_ms
+            except:
+                return 0.0  # Return 0 if ping fails
 
 class MurfAITTSProvider(TTSProvider):
     """Murf AI TTS provider implementation"""

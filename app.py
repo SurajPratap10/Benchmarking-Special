@@ -305,7 +305,8 @@ def display_quick_test_results(results: List[BenchmarkResult]):
             "Model": result.model_name,
             "Location": get_location_display(result),
             "Success": "✅" if result.success else "❌",
-            "Latency (ms)": f"{result.latency_ms:.1f}" if result.success else "N/A",
+            "Ping (ms)": f"{result.latency_1:.1f}" if hasattr(result, 'latency_1') and result.latency_1 > 0 else "N/A",
+            "TTS Latency (ms)": f"{result.latency_ms:.1f}" if result.success else "N/A",
             "File Size (KB)": f"{result.file_size_bytes / 1024:.1f}" if result.success else "N/A",
             "Voice": result.voice,
             "Error": result.error_message if not result.success else ""
@@ -357,7 +358,10 @@ def display_quick_test_results(results: List[BenchmarkResult]):
                     if result.audio_data:
                         # Audio player
                         st.audio(result.audio_data, format="audio/mp3")
-                        st.caption(f"Latency: {result.latency_ms:.1f}ms")
+                        if hasattr(result, 'latency_1') and result.latency_1 > 0:
+                            st.caption(f"Ping: {result.latency_1:.1f}ms | TTS: {result.latency_ms:.1f}ms")
+                        else:
+                            st.caption(f"Latency: {result.latency_ms:.1f}ms")
                         st.caption(f"Size: {result.file_size_bytes/1024:.1f} KB")
 
 def blind_test_page():
@@ -589,7 +593,8 @@ def display_blind_test_samples():
                 "Provider": result.provider.title(),
                 "Model": result.model_name,
                 "Location": get_location_display(result),
-                "Latency (ms)": f"{result.latency_ms:.1f}",
+                "Ping (ms)": f"{result.latency_1:.1f}" if hasattr(result, 'latency_1') and result.latency_1 > 0 else "N/A",
+                "TTS Latency (ms)": f"{result.latency_ms:.1f}",
                 "File Size (KB)": f"{result.file_size_bytes / 1024:.1f}",
                 "Your Choice": "🏆 Winner" if is_winner else ""
             })
@@ -617,7 +622,8 @@ def display_blind_test_samples():
                     
                     if result.audio_data:
                         st.audio(result.audio_data, format="audio/mp3")
-                        st.caption(f"{result.latency_ms:.1f}ms | {result.file_size_bytes/1024:.1f}KB")
+                        ping_info = f"Ping: {result.latency_1:.1f}ms | " if hasattr(result, 'latency_1') and result.latency_1 > 0 else ""
+                        st.caption(f"{ping_info}TTS: {result.latency_ms:.1f}ms | {result.file_size_bytes/1024:.1f}KB")
         
         st.divider()
         
