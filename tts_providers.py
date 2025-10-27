@@ -22,7 +22,7 @@ class TTSResult:
     file_size_bytes: int
     error_message: Optional[str]
     metadata: Dict[str, Any]
-    latency_1: float = 0.0  # Network ping latency without TTS processing (like apiping)
+    latency_1: float = 0.0  # Network latency (pure RTT) without TTS processing
 
 @dataclass
 class TTSRequest:
@@ -63,7 +63,7 @@ class TTSProvider(ABC):
         return True, ""
     
     async def measure_ping_latency(self) -> float:
-        """Measure network ping latency without TTS processing (like apiping)"""
+        """Measure pure network latency (RTT) without TTS processing"""
         try:
             start_time = time.time()
             async with aiohttp.ClientSession() as session:

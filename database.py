@@ -58,7 +58,7 @@ class BenchmarkDatabase:
         except:
             pass
         
-        # Add latency_1 column for ping latency (network latency without TTS processing)
+        # Add latency_1 column for network latency (pure network RTT without TTS processing)
         try:
             cursor.execute('ALTER TABLE benchmark_results ADD COLUMN latency_1 REAL DEFAULT 0')
         except:
@@ -486,7 +486,7 @@ class BenchmarkDatabase:
         return stats
     
     def get_ping_stats_by_provider(self) -> Dict[str, Dict]:
-        """Get ping latency (latency_1) statistics for each provider"""
+        """Get network latency (latency_1) statistics for each provider"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         

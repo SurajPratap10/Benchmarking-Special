@@ -305,7 +305,7 @@ def display_quick_test_results(results: List[BenchmarkResult]):
             "Model": result.model_name,
             "Location": get_location_display(result),
             "Success": "✅" if result.success else "❌",
-            "Ping (ms)": f"{result.latency_1:.1f}" if hasattr(result, 'latency_1') and result.latency_1 > 0 else "N/A",
+            "Network Latency (ms)": f"{result.latency_1:.1f}" if hasattr(result, 'latency_1') and result.latency_1 > 0 else "N/A",
             "TTS Latency (ms)": f"{result.latency_ms:.1f}" if result.success else "N/A",
             "File Size (KB)": f"{result.file_size_bytes / 1024:.1f}" if result.success else "N/A",
             "Voice": result.voice,
@@ -359,7 +359,7 @@ def display_quick_test_results(results: List[BenchmarkResult]):
                         # Audio player
                         st.audio(result.audio_data, format="audio/mp3")
                         if hasattr(result, 'latency_1') and result.latency_1 > 0:
-                            st.caption(f"Ping: {result.latency_1:.1f}ms | TTS: {result.latency_ms:.1f}ms")
+                            st.caption(f"Network: {result.latency_1:.1f}ms | TTS: {result.latency_ms:.1f}ms")
                         else:
                             st.caption(f"Latency: {result.latency_ms:.1f}ms")
                         st.caption(f"Size: {result.file_size_bytes/1024:.1f} KB")
@@ -593,7 +593,7 @@ def display_blind_test_samples():
                 "Provider": result.provider.title(),
                 "Model": result.model_name,
                 "Location": get_location_display(result),
-                "Ping (ms)": f"{result.latency_1:.1f}" if hasattr(result, 'latency_1') and result.latency_1 > 0 else "N/A",
+                "Network Latency (ms)": f"{result.latency_1:.1f}" if hasattr(result, 'latency_1') and result.latency_1 > 0 else "N/A",
                 "TTS Latency (ms)": f"{result.latency_ms:.1f}",
                 "File Size (KB)": f"{result.file_size_bytes / 1024:.1f}",
                 "Your Choice": "🏆 Winner" if is_winner else ""
@@ -622,7 +622,7 @@ def display_blind_test_samples():
                     
                     if result.audio_data:
                         st.audio(result.audio_data, format="audio/mp3")
-                        ping_info = f"Ping: {result.latency_1:.1f}ms | " if hasattr(result, 'latency_1') and result.latency_1 > 0 else ""
+                        ping_info = f"Network: {result.latency_1:.1f}ms | " if hasattr(result, 'latency_1') and result.latency_1 > 0 else ""
                         st.caption(f"{ping_info}TTS: {result.latency_ms:.1f}ms | {result.file_size_bytes/1024:.1f}KB")
         
         st.divider()
@@ -1015,7 +1015,7 @@ def leaderboard_page():
     # Add model names, location, ping and latency stats
     df_leaderboard["Model"] = df_leaderboard["provider"].apply(get_model_name)
     df_leaderboard["Location"] = location_display
-    df_leaderboard["Avg Ping (ms)"] = df_leaderboard["provider"].apply(
+    df_leaderboard["Avg Network Latency (ms)"] = df_leaderboard["provider"].apply(
         lambda p: f"{ping_stats.get(p, {}).get('avg_ping', 0):.1f}" if ping_stats.get(p, {}).get('avg_ping', 0) > 0 else "N/A"
     )
     df_leaderboard["Avg TTS (ms)"] = df_leaderboard["provider"].apply(
@@ -1027,12 +1027,12 @@ def leaderboard_page():
     
     # Format the display columns
     display_df = df_leaderboard[[
-        "rank", "Provider", "Model", "Location", "elo_rating", "Avg Ping (ms)", "Avg TTS (ms)", "P95 TTS (ms)",
+        "rank", "Provider", "Model", "Location", "elo_rating", "Avg Network Latency (ms)", "Avg TTS (ms)", "P95 TTS (ms)",
         "games_played", "wins", "losses", "win_rate"
     ]].copy()
     
     display_df.columns = [
-        "Rank", "Provider", "Model", "Location", "ELO Rating", "Avg Ping", "Avg TTS", "P95 TTS",
+        "Rank", "Provider", "Model", "Location", "ELO Rating", "Avg Network", "Avg TTS", "P95 TTS",
         "Games", "Wins", "Losses", "Win Rate %"
     ]
     
@@ -1059,7 +1059,7 @@ def leaderboard_page():
                 "Location": location_display,
                 "Total Tests": stats['total_tests'],
                 "Success Rate %": f"{stats['success_rate']:.1f}%",
-                "Avg Ping (ms)": f"{provider_ping:.1f}" if provider_ping > 0 else "N/A",
+                "Avg Network Latency (ms)": f"{provider_ping:.1f}" if provider_ping > 0 else "N/A",
                 "Avg TTS (ms)": f"{stats['avg_latency']:.1f}",
                 "Avg File Size (KB)": f"{stats['avg_file_size']/1024:.1f}"
             })

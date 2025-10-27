@@ -37,7 +37,7 @@ class BenchmarkResult:
     location_country: str = ""  # Country where test was run
     location_city: str = ""  # City where test was run
     location_region: str = ""  # Region/State where test was run
-    latency_1: float = 0.0  # Network ping latency without TTS processing (like apiping)
+    latency_1: float = 0.0  # Network latency (pure RTT) without TTS processing
 
 @dataclass
 class BenchmarkSummary:
@@ -88,7 +88,7 @@ class BenchmarkEngine:
     ) -> BenchmarkResult:
         """Run a single TTS test"""
         
-        # Measure ping latency (network latency without TTS processing)
+        # Measure network latency (pure RTT without TTS processing)
         ping_latency = await provider.measure_ping_latency()
         
         request = TTSRequest(
