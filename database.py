@@ -484,6 +484,62 @@ class BenchmarkDatabase:
             }
         
         return stats
+    
+    def get_ping_stats_by_provider(self) -> Dict[str, Dict]:
+        """Get ping latency (latency_1) statistics for each provider"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # Get all successful results with ping data grouped by provider
+        cursor.execute('''
+            SELECT provider, latency_1 
+            FROM benchmark_results 
+            WHERE success = 1 AND latency_1 > 0
+            ORDER BY provider, latency_1
+        ''')
+        results = cursor.fetchall()
+        conn.close()
+        
+        # Group by provider and calculate statistics
+        provider_pings = {}
+        for provider, ping in results:
+            if provider not in provider_pings:
+                provider_pings[provider] = []
+            provider_pings[provider].append(ping)
+        
+        # Calculate statistics for each provider
+        stats = {}
+        for provider, pings in provider_pings.items():
+            if not pings:
+                continue
+            
+            pings_sorted = sorted(pings)
+            n = len(pings_sorted)
+            
+            # Calculate percentiles
+            def percentile(data, p):
+                if not data:
+                    return 0
+                index = (p / 100) * (len(data) - 1)
+                if index.is_integer():
+                    return data[int(index)]
+                else:
+                    lower = data[int(index)]
+                    upper = data[int(index) + 1]
+                    return lower + (upper - lower) * (index - int(index))
+            
+            stats[provider] = {
+                'avg_ping': sum(pings) / n if n > 0 else 0,
+                'median_ping': percentile(pings_sorted, 50),
+                'p90_ping': percentile(pings_sorted, 90),
+                'p95_ping': percentile(pings_sorted, 95),
+                'p99_ping': percentile(pings_sorted, 99),
+                'min_ping': pings_sorted[0] if pings_sorted else 0,
+                'max_ping': pings_sorted[-1] if pings_sorted else 0,
+                'total_tests': n
+            }
+        
+        return stats
 
 # Global database instance
 db = BenchmarkDatabase()

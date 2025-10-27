@@ -1000,9 +1000,10 @@ def leaderboard_page():
     # Enhanced leaderboard table with latency stats
     st.subheader("📊 Current Rankings")
     
-    # Get latency statistics for each provider
+    # Get latency and ping statistics for each provider
     from database import db
     latency_stats = db.get_latency_stats_by_provider()
+    ping_stats = db.get_ping_stats_by_provider()
     
     # Get current location for display
     current_location = geo_service.get_location_string()
@@ -1011,24 +1012,27 @@ def leaderboard_page():
     df_leaderboard = pd.DataFrame(leaderboard)
     df_leaderboard["Provider"] = df_leaderboard["provider"].str.title()
     
-    # Add model names, location, and latency stats
+    # Add model names, location, ping and latency stats
     df_leaderboard["Model"] = df_leaderboard["provider"].apply(get_model_name)
     df_leaderboard["Location"] = location_display
-    df_leaderboard["Avg Latency (ms)"] = df_leaderboard["provider"].apply(
+    df_leaderboard["Avg Ping (ms)"] = df_leaderboard["provider"].apply(
+        lambda p: f"{ping_stats.get(p, {}).get('avg_ping', 0):.1f}" if ping_stats.get(p, {}).get('avg_ping', 0) > 0 else "N/A"
+    )
+    df_leaderboard["Avg TTS (ms)"] = df_leaderboard["provider"].apply(
         lambda p: f"{latency_stats.get(p, {}).get('avg_latency', 0):.1f}"
     )
-    df_leaderboard["P95 Latency (ms)"] = df_leaderboard["provider"].apply(
+    df_leaderboard["P95 TTS (ms)"] = df_leaderboard["provider"].apply(
         lambda p: f"{latency_stats.get(p, {}).get('p95_latency', 0):.1f}"
     )
     
     # Format the display columns
     display_df = df_leaderboard[[
-        "rank", "Provider", "Model", "Location", "elo_rating", "Avg Latency (ms)", "P95 Latency (ms)",
+        "rank", "Provider", "Model", "Location", "elo_rating", "Avg Ping (ms)", "Avg TTS (ms)", "P95 TTS (ms)",
         "games_played", "wins", "losses", "win_rate"
     ]].copy()
     
     display_df.columns = [
-        "Rank", "Provider", "Model", "Location", "ELO Rating", "Avg Latency", "P95 Latency",
+        "Rank", "Provider", "Model", "Location", "ELO Rating", "Avg Ping", "Avg TTS", "P95 TTS",
         "Games", "Wins", "Losses", "Win Rate %"
     ]
     
@@ -1046,13 +1050,17 @@ def leaderboard_page():
         location_display = f"{geo_service.get_country_flag()} {geo_service.get_location_string()}"
         
         for provider, stats in provider_stats.items():
+            # Get ping stats for this provider
+            provider_ping = ping_stats.get(provider, {}).get('avg_ping', 0)
+            
             stats_data.append({
                 "Provider": provider.title(),
                 "Model": get_model_name(provider),
                 "Location": location_display,
                 "Total Tests": stats['total_tests'],
                 "Success Rate %": f"{stats['success_rate']:.1f}%",
-                "Avg Latency (ms)": f"{stats['avg_latency']:.1f}",
+                "Avg Ping (ms)": f"{provider_ping:.1f}" if provider_ping > 0 else "N/A",
+                "Avg TTS (ms)": f"{stats['avg_latency']:.1f}",
                 "Avg File Size (KB)": f"{stats['avg_file_size']/1024:.1f}"
             })
         
