@@ -558,13 +558,7 @@ class MurfFalconOct23TTSProvider(TTSProvider):
             payload["rate"] = request.speed
         
         try:
-            # Create SSL context that doesn't verify certificates (for global endpoint)
-            ssl_context = ssl.create_default_context()
-            ssl_context.check_hostname = False
-            ssl_context.verify_mode = ssl.CERT_NONE
-            
-            connector = aiohttp.TCPConnector(ssl=ssl_context)
-            async with aiohttp.ClientSession(connector=connector) as session:
+            async with aiohttp.ClientSession() as session:
                 async with session.post(
                     self.config.base_url,
                     headers=headers,
