@@ -37,6 +37,7 @@ class BenchmarkResult:
     location_country: str = ""  # Country where test was run
     location_city: str = ""  # City where test was run
     location_region: str = ""  # Region/State where test was run
+    ttfb_ms: float = 0.0  # Time To First Byte
 
 @dataclass
 class BenchmarkSummary:
@@ -129,7 +130,8 @@ class BenchmarkEngine:
             model_name=model_name,
             location_country=location.get('country', 'Unknown'),
             location_city=location.get('city', 'Unknown'),
-            location_region=location.get('region', 'Unknown')
+            location_region=location.get('region', 'Unknown'),
+            ttfb_ms=result.ttfb_ms
         )
         
         # Save to database

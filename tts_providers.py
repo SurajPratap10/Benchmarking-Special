@@ -22,6 +22,7 @@ class TTSResult:
     file_size_bytes: int
     error_message: Optional[str]
     metadata: Dict[str, Any]
+    ttfb_ms: float = 0.0  # Time To First Byte
 
 @dataclass
 class TTSRequest:
@@ -107,8 +108,7 @@ class MurfAITTSProvider(TTSProvider):
                     json=payload,
                     timeout=aiohttp.ClientTimeout(total=30)
                 ) as response:
-                    end_time = time.time()
-                    latency_ms = (end_time - start_time) * 1000
+                    ttfb_ms = (time.time() - start_time) * 1000  # Time to first byte
                     
                     if response.status == 200:
                         # Check content type to determine response format
@@ -124,6 +124,7 @@ class MurfAITTSProvider(TTSProvider):
                                 async with session.get(audio_url) as audio_response:
                                     if audio_response.status == 200:
                                         audio_data = await audio_response.read()
+                                        latency_ms = (time.time() - start_time) * 1000  # Full latency
                                         return TTSResult(
                                             success=True,
                                             audio_data=audio_data,
@@ -136,7 +137,8 @@ class MurfAITTSProvider(TTSProvider):
                                                 "format": request.format,
                                                 "provider": self.provider_id,
                                                 "audio_url": audio_url
-                                            }
+                                            },
+                                            ttfb_ms=ttfb_ms
                                         )
                                     else:
                                         return TTSResult(
@@ -151,6 +153,7 @@ class MurfAITTSProvider(TTSProvider):
                                 # Base64 encoded audio data
                                 import base64
                                 audio_data = base64.b64decode(response_data["audio"])
+                                latency_ms = (time.time() - start_time) * 1000  # Full latency
                                 return TTSResult(
                                     success=True,
                                     audio_data=audio_data,
@@ -162,7 +165,8 @@ class MurfAITTSProvider(TTSProvider):
                                         "speed": request.speed,
                                         "format": request.format,
                                         "provider": self.provider_id
-                                    }
+                                    },
+                                    ttfb_ms=ttfb_ms
                                 )
                             else:
                                 return TTSResult(
@@ -176,6 +180,7 @@ class MurfAITTSProvider(TTSProvider):
                         else:
                             # Direct audio data response
                             audio_data = await response.read()
+                            latency_ms = (time.time() - start_time) * 1000  # Full latency
                             return TTSResult(
                                 success=True,
                                 audio_data=audio_data,
@@ -188,7 +193,8 @@ class MurfAITTSProvider(TTSProvider):
                                     "format": request.format,
                                     "provider": self.provider_id,
                                     "content_type": content_type
-                                }
+                                },
+                                ttfb_ms=ttfb_ms
                             )
                     else:
                         error_text = await response.text()
@@ -270,8 +276,7 @@ class MurfFalconTTSProvider(TTSProvider):
                     json=payload,
                     timeout=aiohttp.ClientTimeout(total=30)
                 ) as response:
-                    end_time = time.time()
-                    latency_ms = (end_time - start_time) * 1000
+                    ttfb_ms = (time.time() - start_time) * 1000  # Time to first byte
                     
                     if response.status == 200:
                         # Check content type to determine response format
@@ -287,6 +292,7 @@ class MurfFalconTTSProvider(TTSProvider):
                                 async with session.get(audio_url) as audio_response:
                                     if audio_response.status == 200:
                                         audio_data = await audio_response.read()
+                                        latency_ms = (time.time() - start_time) * 1000  # Full latency
                                         return TTSResult(
                                             success=True,
                                             audio_data=audio_data,
@@ -300,13 +306,14 @@ class MurfFalconTTSProvider(TTSProvider):
                                                 "provider": self.provider_id,
                                                 "model": "falcon-turbo",
                                                 "audio_url": audio_url
-                                            }
+                                            },
+                                            ttfb_ms=ttfb_ms
                                         )
                                     else:
                                         return TTSResult(
                                             success=False,
                                             audio_data=None,
-                                            latency_ms=latency_ms,
+                                            latency_ms=ttfb_ms,
                                             file_size_bytes=0,
                                             error_message=f"Failed to download audio from URL: {audio_response.status}",
                                             metadata={"provider": self.provider_id}
@@ -315,6 +322,7 @@ class MurfFalconTTSProvider(TTSProvider):
                                 # Base64 encoded audio data
                                 import base64
                                 audio_data = base64.b64decode(response_data["audio"])
+                                latency_ms = (time.time() - start_time) * 1000  # Full latency
                                 return TTSResult(
                                     success=True,
                                     audio_data=audio_data,
@@ -327,7 +335,8 @@ class MurfFalconTTSProvider(TTSProvider):
                                         "format": request.format,
                                         "provider": self.provider_id,
                                         "model": "falcon-turbo"
-                                    }
+                                    },
+                                    ttfb_ms=ttfb_ms
                                 )
                             else:
                                 return TTSResult(
@@ -341,6 +350,7 @@ class MurfFalconTTSProvider(TTSProvider):
                         else:
                             # Direct audio data response (streaming)
                             audio_data = await response.read()
+                            latency_ms = (time.time() - start_time) * 1000  # Full latency
                             return TTSResult(
                                 success=True,
                                 audio_data=audio_data,
@@ -354,7 +364,8 @@ class MurfFalconTTSProvider(TTSProvider):
                                     "provider": self.provider_id,
                                     "model": "falcon-turbo",
                                     "content_type": content_type
-                                }
+                                },
+                                ttfb_ms=ttfb_ms
                             )
                     else:
                         error_text = await response.text()
@@ -437,10 +448,11 @@ class MurfFalconOct13TTSProvider(TTSProvider):
                     json=payload,
                     timeout=aiohttp.ClientTimeout(total=30)
                 ) as response:
-                    latency_ms = (time.time() - start_time) * 1000
+                    ttfb_ms = (time.time() - start_time) * 1000  # Time to first byte
                     
                     if response.status == 200:
                         audio_data = await response.read()
+                        latency_ms = (time.time() - start_time) * 1000  # Full latency including download
                         file_size = len(audio_data)
                         
                         return TTSResult(
@@ -454,7 +466,8 @@ class MurfFalconOct13TTSProvider(TTSProvider):
                                 "model": "FALCON",
                                 "voice": request.voice,
                                 "format": request.format or "mp3"
-                            }
+                            },
+                            ttfb_ms=ttfb_ms
                         )
                     else:
                         error_text = await response.text()
@@ -543,10 +556,11 @@ class MurfFalconOct23TTSProvider(TTSProvider):
                     json=payload,
                     timeout=aiohttp.ClientTimeout(total=30)
                 ) as response:
-                    latency_ms = (time.time() - start_time) * 1000
+                    ttfb_ms = (time.time() - start_time) * 1000  # Time to first byte
                     
                     if response.status == 200:
                         audio_data = await response.read()
+                        latency_ms = (time.time() - start_time) * 1000  # Full latency including download
                         file_size = len(audio_data)
                         
                         return TTSResult(
@@ -560,7 +574,8 @@ class MurfFalconOct23TTSProvider(TTSProvider):
                                 "model": "FALCON",
                                 "voice": request.voice,
                                 "format": request.format or "mp3"
-                            }
+                            },
+                            ttfb_ms=ttfb_ms
                         )
                     else:
                         error_text = await response.text()
@@ -649,12 +664,12 @@ class DeepgramTTSProvider(TTSProvider):
                     json=payload,
                     timeout=aiohttp.ClientTimeout(total=30)
                 ) as response:
-                    end_time = time.time()
-                    latency_ms = (end_time - start_time) * 1000
+                    ttfb_ms = (time.time() - start_time) * 1000  # Time to first byte
                     
                     if response.status == 200:
                         # Deepgram returns audio data directly
                         audio_data = await response.read()
+                        latency_ms = (time.time() - start_time) * 1000  # Full latency including download
                         return TTSResult(
                             success=True,
                             audio_data=audio_data,
@@ -668,14 +683,15 @@ class DeepgramTTSProvider(TTSProvider):
                                 "provider": self.provider_id,
                                 "model": request.voice,
                                 "sample_rate": 24000
-                            }
+                            },
+                            ttfb_ms=ttfb_ms
                         )
                     else:
                         error_text = await response.text()
                         return TTSResult(
                             success=False,
                             audio_data=None,
-                            latency_ms=latency_ms,
+                            latency_ms=ttfb_ms,
                             file_size_bytes=0,
                             error_message=f"API Error {response.status}: {error_text}",
                             metadata={"provider": self.provider_id}
@@ -757,12 +773,12 @@ class DeepgramAura2TTSProvider(TTSProvider):
                     json=payload,
                     timeout=aiohttp.ClientTimeout(total=30)
                 ) as response:
-                    end_time = time.time()
-                    latency_ms = (end_time - start_time) * 1000
+                    ttfb_ms = (time.time() - start_time) * 1000  # Time to first byte
                     
                     if response.status == 200:
                         # Deepgram returns audio data directly
                         audio_data = await response.read()
+                        latency_ms = (time.time() - start_time) * 1000  # Full latency including download
                         return TTSResult(
                             success=True,
                             audio_data=audio_data,
@@ -776,14 +792,15 @@ class DeepgramAura2TTSProvider(TTSProvider):
                                 "provider": self.provider_id,
                                 "model": request.voice,
                                 "sample_rate": 24000
-                            }
+                            },
+                            ttfb_ms=ttfb_ms
                         )
                     else:
                         error_text = await response.text()
                         return TTSResult(
                             success=False,
                             audio_data=None,
-                            latency_ms=latency_ms,
+                            latency_ms=ttfb_ms,
                             file_size_bytes=0,
                             error_message=f"API Error {response.status}: {error_text}",
                             metadata={"provider": self.provider_id}
@@ -875,12 +892,12 @@ class ElevenLabsTTSProvider(TTSProvider):
                     json=payload,
                     timeout=aiohttp.ClientTimeout(total=30)
                 ) as response:
-                    end_time = time.time()
-                    latency_ms = (end_time - start_time) * 1000
+                    ttfb_ms = (time.time() - start_time) * 1000  # Time to first byte
                     
                     if response.status == 200:
                         # ElevenLabs returns audio data directly
                         audio_data = await response.read()
+                        latency_ms = (time.time() - start_time) * 1000  # Full latency including download
                         return TTSResult(
                             success=True,
                             audio_data=audio_data,
@@ -893,7 +910,8 @@ class ElevenLabsTTSProvider(TTSProvider):
                                 "model": "eleven_flash_v2_5",
                                 "provider": self.provider_id,
                                 "format": "mp3_44100_128"
-                            }
+                            },
+                            ttfb_ms=ttfb_ms
                         )
                     else:
                         error_text = await response.text()
@@ -973,12 +991,12 @@ class OpenAITTSProvider(TTSProvider):
                     json=payload,
                     timeout=aiohttp.ClientTimeout(total=30)
                 ) as response:
-                    end_time = time.time()
-                    latency_ms = (end_time - start_time) * 1000
+                    ttfb_ms = (time.time() - start_time) * 1000  # Time to first byte
                     
                     if response.status == 200:
                         # OpenAI returns audio data directly
                         audio_data = await response.read()
+                        latency_ms = (time.time() - start_time) * 1000  # Full latency including download
                         return TTSResult(
                             success=True,
                             audio_data=audio_data,
@@ -991,7 +1009,8 @@ class OpenAITTSProvider(TTSProvider):
                                 "provider": self.provider_id,
                                 "format": "mp3",
                                 "speed": payload["speed"]
-                            }
+                            },
+                            ttfb_ms=ttfb_ms
                         )
                     else:
                         error_text = await response.text()
@@ -1093,12 +1112,12 @@ class CartesiaTTSProvider(TTSProvider):
                     json=payload,
                     timeout=aiohttp.ClientTimeout(total=30)
                 ) as response:
-                    end_time = time.time()
-                    latency_ms = (end_time - start_time) * 1000
+                    ttfb_ms = (time.time() - start_time) * 1000  # Time to first byte
                     
                     if response.status == 200:
                         # Cartesia returns audio data directly
                         audio_data = await response.read()
+                        latency_ms = (time.time() - start_time) * 1000  # Full latency including download
                         return TTSResult(
                             success=True,
                             audio_data=audio_data,
@@ -1112,7 +1131,8 @@ class CartesiaTTSProvider(TTSProvider):
                                 "provider": self.provider_id,
                                 "format": "mp3",
                                 "sample_rate": 44100
-                            }
+                            },
+                            ttfb_ms=ttfb_ms
                         )
                     else:
                         error_text = await response.text()
