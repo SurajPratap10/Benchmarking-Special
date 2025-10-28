@@ -7,6 +7,7 @@ import asyncio
 import pandas as pd
 import plotly.express as px
 import json
+import base64
 from datetime import datetime
 from typing import Dict, List, Any
 
@@ -355,10 +356,25 @@ def display_quick_test_results(results: List[BenchmarkResult]):
                     st.caption(f"Model: {result.model_name}")
                     
                     if result.audio_data:
-                        # Audio player
-                        st.audio(result.audio_data, format="audio/mp3")
+                        # Custom audio player without download option in 3-dot menu
+                        audio_base64 = base64.b64encode(result.audio_data).decode()
+                        audio_html = f"""
+                        <audio controls controlsList="nodownload" style="width: 100%;">
+                            <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mpeg">
+                        </audio>
+                        """
+                        st.markdown(audio_html, unsafe_allow_html=True)
                         st.caption(f"Latency: {result.latency_ms:.1f}ms")
                         st.caption(f"Size: {result.file_size_bytes/1024:.1f} KB")
+                        
+                        # Download button for MP3
+                        st.download_button(
+                            label="Download MP3",
+                            data=result.audio_data,
+                            file_name=f"{result.provider}_{result.voice}.mp3",
+                            mime="audio/mpeg",
+                            key=f"download_{result.provider}_{i}_{j}"
+                        )
 
 def blind_test_page():
     """Blind test page for unbiased audio quality comparison"""
@@ -527,9 +543,24 @@ def display_blind_test_samples():
                     st.markdown(f"### Sample {result.blind_label}")
                     
                     if result.audio_data:
-                        # Audio player
-                        st.audio(result.audio_data, format="audio/mp3")
+                        # Custom audio player without download option in 3-dot menu
+                        audio_base64 = base64.b64encode(result.audio_data).decode()
+                        audio_html = f"""
+                        <audio controls controlsList="nodownload" style="width: 100%;">
+                            <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mpeg">
+                        </audio>
+                        """
+                        st.markdown(audio_html, unsafe_allow_html=True)
                         st.caption(f"Sample {result.blind_label}")
+                        
+                        # Download button
+                        st.download_button(
+                            label="Download MP3",
+                            data=result.audio_data,
+                            file_name=f"sample_{result.blind_label}.mp3",
+                            mime="audio/mpeg",
+                            key=f"download_blind_{result.blind_label}_{i}_{j}"
+                        )
         
         st.divider()
         
@@ -616,8 +647,24 @@ def display_blind_test_samples():
                     st.caption(result.model_name)
                     
                     if result.audio_data:
-                        st.audio(result.audio_data, format="audio/mp3")
+                        # Custom audio player without download option in 3-dot menu
+                        audio_base64 = base64.b64encode(result.audio_data).decode()
+                        audio_html = f"""
+                        <audio controls controlsList="nodownload" style="width: 100%;">
+                            <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mpeg">
+                        </audio>
+                        """
+                        st.markdown(audio_html, unsafe_allow_html=True)
                         st.caption(f"{result.latency_ms:.1f}ms | {result.file_size_bytes/1024:.1f}KB")
+                        
+                        # Download button
+                        st.download_button(
+                            label="Download MP3",
+                            data=result.audio_data,
+                            file_name=f"{result.provider}_{result.blind_label}.mp3",
+                            mime="audio/mpeg",
+                            key=f"download_revealed_{result.blind_label}_{i}_{j}"
+                        )
         
         st.divider()
         

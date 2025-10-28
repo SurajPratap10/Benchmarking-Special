@@ -120,7 +120,9 @@ class MurfAITTSProvider(TTSProvider):
         payload = {
             "text": request.text,
             "voiceId": request.voice,
-            "audioFormat": request.format or "mp3"
+            "format": "mp3",  # Murf v1 uses 'format' not 'audioFormat'
+            "sampleRate": 24000,
+            "channelType": "STEREO"
         }
         
         # Add speed/rate if specified
@@ -283,7 +285,8 @@ class MurfFalconTTSProvider(TTSProvider):
         payload = {
             "text": request.text,
             "voiceId": request.voice,
-            "audioFormat": request.format or "mp3"
+            "format": "mp3",  # Use 'format' for consistency
+            "sampleRate": 24000
         }
         
         # Add speed/rate if specified
@@ -449,7 +452,8 @@ class MurfFalconOct13TTSProvider(TTSProvider):
         payload = {
             "text": request.text,
             "voiceId": request.voice,
-            "audioFormat": request.format or "mp3",
+            "format": "mp3",
+            "sampleRate": 24000,
             "model": "FALCON"
         }
         
@@ -549,7 +553,8 @@ class MurfFalconOct23TTSProvider(TTSProvider):
         payload = {
             "text": request.text,
             "voiceId": request.voice,
-            "audioFormat": request.format or "mp3",
+            "format": "mp3",
+            "sampleRate": 24000,
             "model": "FALCON"
         }
         
