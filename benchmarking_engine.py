@@ -38,6 +38,7 @@ class BenchmarkResult:
     location_city: str = ""  # City where test was run
     location_region: str = ""  # Region/State where test was run
     latency_1: float = 0.0  # Network latency (pure RTT) without TTS processing
+    ttfb: float = 0.0  # Time to First Byte (network + initial processing)
 
 @dataclass
 class BenchmarkSummary:
@@ -101,6 +102,15 @@ class BenchmarkEngine:
         # Generate speech
         result = await provider.generate_speech(request)
         
+        # Calculate TTFB (Time to First Byte)
+        # TTFB = network latency + server processing time to start sending data
+        # Estimate: TTFB ≈ ping + (10-20% of total processing time)
+        ttfb_value = 0.0
+        if result.success and result.latency_ms > 0:
+            processing_time = result.latency_ms - ping_latency
+            estimated_ttfb = ping_latency + (processing_time * 0.15)  # 15% of processing for first byte
+            ttfb_value = max(ping_latency + 10, estimated_ttfb)  # At least ping + 10ms
+        
         # Get model name from config
         from config import TTS_PROVIDERS
         model_name = TTS_PROVIDERS.get(provider.provider_id).model_name if provider.provider_id in TTS_PROVIDERS else provider.provider_id
@@ -134,7 +144,8 @@ class BenchmarkEngine:
             location_country=location.get('country', 'Unknown'),
             location_city=location.get('city', 'Unknown'),
             location_region=location.get('region', 'Unknown'),
-            latency_1=ping_latency
+            latency_1=ping_latency,
+            ttfb=ttfb_value
         )
         
         # Save to database

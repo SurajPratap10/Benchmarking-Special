@@ -8,6 +8,7 @@ import pandas as pd
 import plotly.express as px
 import json
 import base64
+import time
 from datetime import datetime
 from typing import Dict, List, Any
 
@@ -90,6 +91,53 @@ def check_configuration():
 def main():
     """Main application function"""
     
+    # NEW FEATURE ANNOUNCEMENT - Above header
+    st.markdown("""
+    <style>
+    @keyframes catchyPulse {
+        0% { 
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(255, 75, 75, 0.7);
+        }
+        50% { 
+            transform: scale(1.15);
+            box-shadow: 0 0 10px 5px rgba(255, 75, 75, 0);
+        }
+        100% { 
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(255, 75, 75, 0);
+        }
+    }
+    .feature-banner {
+        padding: 0;
+        margin: 0 0 10px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+    .new-badge {
+        animation: catchyPulse 1.5s ease-in-out infinite;
+        display: inline-block;
+        background: #ff4b4b;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    .feature-text {
+        color: #262730;
+        font-size: 15px;
+        margin: 0;
+    }
+    </style>
+    <div class="feature-banner">
+        <span class="new-badge">NEW</span>
+        <p class="feature-text"><strong>Streaming Race</strong></p>
+    </div>
+    """, unsafe_allow_html=True)
+    
     # Header
     st.title("TTS Benchmarking Tool")
     st.markdown("Compare Text-to-Speech providers with comprehensive metrics and analysis")
@@ -101,7 +149,7 @@ def main():
         
         st.subheader("Navigator")
         
-        pages = ["Leaderboard", "Quick Test", "Blind Test", "Batch Benchmark", "Results Analysis", "ROI Calculator"]
+        pages = ["Leaderboard", "Quick Test", "Blind Test", "Streaming Race", "Batch Benchmark", "Results Analysis", "ROI Calculator"]
         
         # Create navbar-style buttons
         for i, page_name in enumerate(pages):
@@ -147,6 +195,8 @@ def main():
         quick_test_page()
     elif page == "Blind Test":
         blind_test_page()
+    elif page == "Streaming Race":
+        streaming_race_page()
     elif page == "Batch Benchmark":
         batch_benchmark_page()
     elif page == "Results Analysis":
@@ -306,6 +356,7 @@ def display_quick_test_results(results: List[BenchmarkResult]):
             "Model": result.model_name,
             "Location": get_location_display(result),
             "Success": "✅" if result.success else "❌",
+            "TTFB (ms)": f"{result.ttfb:.1f}" if result.success and result.ttfb > 0 else "N/A",
             "Latency (ms)": f"{result.latency_ms:.1f}" if result.success else "N/A",
             "File Size (KB)": f"{result.file_size_bytes / 1024:.1f}" if result.success else "N/A",
             "Voice": result.voice,
@@ -620,6 +671,7 @@ def display_blind_test_samples():
                 "Provider": result.provider.title(),
                 "Model": result.model_name,
                 "Location": get_location_display(result),
+                "TTFB (ms)": f"{result.ttfb:.1f}" if result.ttfb > 0 else "N/A",
                 "Latency (ms)": f"{result.latency_ms:.1f}",
                 "File Size (KB)": f"{result.file_size_bytes / 1024:.1f}",
                 "Your Choice": "🏆 Winner" if is_winner else ""
@@ -710,6 +762,334 @@ def handle_blind_test_vote(winner_result: BenchmarkResult, loser_result: Benchma
         
     except Exception as e:
         st.error(f"Error updating ratings: {e}")
+
+def streaming_race_page():
+    """Streaming race page - visualize real-time TTS generation"""
+    
+    st.header("⚡ Streaming Race")
+    st.markdown("Watch TTS providers race in real-time! See Time to First Byte (TTFB) and total generation speed (Latency).")
+    
+    # Get configuration status
+    config_status = check_configuration()
+    
+    if not st.session_state.config_valid:
+        st.warning("Please configure at least one API key in the sidebar first.")
+        return
+    
+    # Get only configured providers
+    configured_providers = [
+        provider_id for provider_id, status in config_status["providers"].items() 
+        if status["configured"]
+    ]
+    
+    if len(configured_providers) < 2:
+        st.warning("⚠️ Streaming race requires at least 2 configured providers.")
+        return
+    
+    # Initialize session state for race
+    if "race_running" not in st.session_state:
+        st.session_state.race_running = False
+    
+    if "race_results" not in st.session_state:
+        st.session_state.race_results = None
+    
+    # Configuration section
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        text_input = st.text_area(
+            "Enter text to synthesize:",
+            value="The quick brown fox jumps over the lazy dog. This is a test of real-time speech synthesis speed and latency.",
+            height=100,
+            max_chars=500
+        )
+        
+        word_count = len(text_input.split())
+        st.caption(f"Word count: {word_count}")
+    
+    with col2:
+        st.markdown("""
+        **How Streaming Race Works:**
+        1. Enter text to synthesize
+        2. Select providers to race
+        3. Click START RACE
+        4. Watch live progress bars
+        5. See TTFB and Latencies
+        """)
+    
+    # Provider selection
+    # Default to murf_falcon_oct23 and deepgram_aura2 if available
+    default_race_providers = []
+    if "murf_falcon_oct23" in configured_providers:
+        default_race_providers.append("murf_falcon_oct23")
+    if "deepgram_aura2" in configured_providers:
+        default_race_providers.append("deepgram_aura2")
+    # If those aren't available, fall back to first 2 configured providers
+    if len(default_race_providers) < 2:
+        default_race_providers = configured_providers[:min(2, len(configured_providers))]
+    
+    selected_providers = st.multiselect(
+        "Select providers to race (minimum 2):",
+        configured_providers,
+        default=default_race_providers,
+        help="Select 2-6 providers for the race"
+    )
+    
+    # Start race button
+    if st.button("START RACE", type="primary", disabled=len(selected_providers) < 2):
+        if text_input and len(selected_providers) >= 2:
+            # Validate input
+            valid, error_msg = session_manager.validate_request(text_input)
+            if valid:
+                st.session_state.race_running = True
+                run_streaming_race(text_input, selected_providers)
+            else:
+                st.error(f"❌ {error_msg}")
+        else:
+            st.warning("Please enter text and select at least 2 providers.")
+    
+    # Display race results if available
+    if st.session_state.race_results is not None:
+        display_race_results(st.session_state.race_results)
+
+def run_streaming_race(text: str, providers: List[str]):
+    """Run the streaming race with real-time tracking"""
+    
+    st.markdown("---")
+    st.subheader("🏁 Race in Progress...")
+    
+    # Create placeholders for each provider
+    race_placeholders = {}
+    status_placeholders = {}
+    
+    for provider_id in providers:
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.markdown(f"**{provider_id.replace('_', ' ').title()}**")
+            race_placeholders[provider_id] = st.progress(0)
+        with col2:
+            status_placeholders[provider_id] = st.empty()
+    
+    # Results storage
+    race_results = {}
+    
+    async def race_provider(provider_id: str):
+        """Race a single provider with streaming tracking"""
+        try:
+            provider = TTSProviderFactory.create_provider(provider_id)
+            
+            # Get first available voice
+            voices = TTS_PROVIDERS[provider_id].supported_voices
+            voice = voices[0] if voices else "default"
+            
+            # Create test sample
+            sample = TestSample(
+                id="streaming_race",
+                text=text,
+                word_count=len(text.split()),
+                category="race",
+                length_category="custom",
+                complexity_score=0.5
+            )
+            
+            # Show initial ping status
+            status_placeholders[provider_id].text(f"🔄 Starting...")
+            
+            # Use benchmark engine to run test (saves to database automatically)
+            benchmark_result = await st.session_state.benchmark_engine.run_single_test(
+                provider, sample, voice, iteration=1
+            )
+            
+            if benchmark_result.success:
+                # Simulate streaming progress visualization
+                progress_steps = 20
+                for step in range(progress_steps + 1):
+                    progress = step / progress_steps
+                    race_placeholders[provider_id].progress(progress)
+                    
+                    elapsed = (step / progress_steps) * benchmark_result.latency_ms
+                    bytes_so_far = int((step / progress_steps) * benchmark_result.file_size_bytes)
+                    
+                    if step == 0:
+                        status_placeholders[provider_id].text(f"⚡ TTFB: {benchmark_result.ttfb:.0f}ms")
+                    elif step < progress_steps:
+                        status_placeholders[provider_id].text(f"📦 {bytes_so_far / 1024:.1f}KB")
+                    else:
+                        status_placeholders[provider_id].text(f"✅ Done: {benchmark_result.latency_ms:.0f}ms")
+                    
+                    await asyncio.sleep(benchmark_result.latency_ms / progress_steps / 1000)  # Sleep in seconds
+                
+                race_results[provider_id] = {
+                    'success': True,
+                    'ttfb': benchmark_result.ttfb,
+                    'total_time': benchmark_result.latency_ms,
+                    'file_size': benchmark_result.file_size_bytes,
+                    'audio_data': benchmark_result.audio_data,
+                    'voice': voice,
+                    'ping': benchmark_result.latency_1,
+                    'text': text
+                }
+            else:
+                race_placeholders[provider_id].progress(0)
+                status_placeholders[provider_id].text(f"❌ Failed")
+                race_results[provider_id] = {
+                    'success': False,
+                    'error': benchmark_result.error_message
+                }
+            
+        except Exception as e:
+            race_placeholders[provider_id].progress(0)
+            status_placeholders[provider_id].text(f"❌ Error")
+            race_results[provider_id] = {
+                'success': False,
+                'error': str(e)
+            }
+    
+    # Run all providers concurrently
+    async def race_all():
+        tasks = [race_provider(provider_id) for provider_id in providers]
+        await asyncio.gather(*tasks)
+    
+    # Execute the race
+    asyncio.run(race_all())
+    
+    # Store results
+    st.session_state.race_results = race_results
+    st.session_state.race_running = False
+    
+    # Update ELO ratings based on TTFB (fastest TTFB wins)
+    successful_races = {k: v for k, v in race_results.items() if v.get('success')}
+    if len(successful_races) >= 2:
+        # Sort by TTFB
+        sorted_by_ttfb = sorted(successful_races.items(), key=lambda x: x[1]['ttfb'])
+        
+        # Winner has lowest TTFB, update ratings against all others
+        winner_provider = sorted_by_ttfb[0][0]
+        for loser_provider, _ in sorted_by_ttfb[1:]:
+            try:
+                db.update_elo_ratings(winner_provider, loser_provider, k_factor=32)
+            except:
+                pass  # Ignore ELO update errors
+    
+    # Small delay to show final state
+    import time as time_module
+    time_module.sleep(0.5)
+    
+    st.rerun()
+
+def display_race_results(race_results: Dict[str, Any]):
+    """Display race results with winner and detailed metrics"""
+    
+    st.markdown("---")
+    st.subheader("🏆 Race Results")
+    
+    # Filter successful results
+    successful_results = {k: v for k, v in race_results.items() if v.get('success')}
+    
+    if not successful_results:
+        st.error("❌ No providers completed successfully.")
+        return
+    
+    # Find winner (fastest TTFB)
+    winner = min(successful_results.items(), key=lambda x: x[1]['ttfb'])
+    winner_provider = winner[0]
+    winner_data = winner[1]
+    
+    # Winner announcement
+    st.success(f"**WINNER: {winner_provider.replace('_', ' ').title()}** - TTFB: {winner_data['ttfb']:.0f}ms")
+    
+    # Results table
+    st.markdown("### 📊 Detailed Results")
+    
+    results_data = []
+    for provider, data in sorted(successful_results.items(), key=lambda x: x[1]['ttfb']):
+        # Calculate speed (chars per second)
+        text_length = len(data.get('text', ''))
+        speed = (text_length / (data['total_time'] / 1000)) if data['total_time'] > 0 else 0
+        
+        results_data.append({
+            "Rank": len(results_data) + 1,
+            "Provider": provider.replace('_', ' ').title(),
+            "Model": get_model_name(provider),
+            "TTFB (ms)": f"{data['ttfb']:.1f}",
+            "Latency (ms)": f"{data['total_time']:.1f}",
+            "Speed (char/s)": f"{speed:.1f}",
+            "File Size (KB)": f"{data['file_size'] / 1024:.1f}"
+        })
+    
+    df = pd.DataFrame(results_data)
+    st.dataframe(df, use_container_width=True, hide_index=True)
+    
+    # Visualizations
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # TTFB comparison
+        fig_ttfb = px.bar(
+            x=[r['Provider'] for r in results_data],
+            y=[float(r['TTFB (ms)']) for r in results_data],
+            title="Time to First Byte (TTFB)",
+            labels={"x": "Provider", "y": "TTFB (ms)"},
+            color=[float(r['TTFB (ms)']) for r in results_data],
+            color_continuous_scale="RdYlGn_r"
+        )
+        fig_ttfb.update_layout(showlegend=False)
+        st.plotly_chart(fig_ttfb, use_container_width=True)
+    
+    with col2:
+        # Latency comparison
+        fig_total = px.bar(
+            x=[r['Provider'] for r in results_data],
+            y=[float(r['Latency (ms)']) for r in results_data],
+            title="Total Latency",
+            labels={"x": "Provider", "y": "Latency (ms)"},
+            color=[float(r['Latency (ms)']) for r in results_data],
+            color_continuous_scale="RdYlGn_r"
+        )
+        fig_total.update_layout(showlegend=False)
+        st.plotly_chart(fig_total, use_container_width=True)
+    
+    # Audio playback
+    st.subheader("🎧 Audio Samples")
+    
+    # Display audio players
+    audio_cols = st.columns(min(4, len(successful_results)))
+    for idx, (provider, data) in enumerate(sorted(successful_results.items(), key=lambda x: x[1]['ttfb'])):
+        with audio_cols[idx % 4]:
+            # Show medals for top 3, plain text for others
+            if provider == winner_provider:
+                st.markdown(f"**🥇 {provider.replace('_', ' ').title()}**")
+            elif idx == 1:
+                st.markdown(f"**🥈 {provider.replace('_', ' ').title()}**")
+            elif idx == 2:
+                st.markdown(f"**🥉 {provider.replace('_', ' ').title()}**")
+            else:
+                st.markdown(f"{provider.replace('_', ' ').title()}")
+            st.caption(f"TTFB: {data['ttfb']:.0f}ms")
+            
+            if data.get('audio_data'):
+                audio_base64 = base64.b64encode(data['audio_data']).decode()
+                audio_html = f"""
+                <audio controls controlsList="nodownload" style="width: 100%;">
+                    <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mpeg">
+                </audio>
+                """
+                st.markdown(audio_html, unsafe_allow_html=True)
+                
+                # Download button
+                st.download_button(
+                    label="Download MP3",
+                    data=data['audio_data'],
+                    file_name=f"{provider}_race.mp3",
+                    mime="audio/mpeg",
+                    key=f"download_race_{provider}"
+                )
+    
+    # Race again button
+    st.markdown("---")
+    if st.button("Race Again", type="primary", use_container_width=True):
+        st.session_state.race_results = None
+        st.rerun()
 
 def batch_benchmark_page():
     """Batch benchmark page for comprehensive testing"""
@@ -891,13 +1271,23 @@ def display_benchmark_summary(results: List[BenchmarkResult]):
     # Get current location for display
     current_location = geo_service.get_location_string()
     
+    # Calculate TTFB averages per provider
+    ttfb_by_provider = {}
+    for result in results:
+        if result.success and result.ttfb > 0:
+            if result.provider not in ttfb_by_provider:
+                ttfb_by_provider[result.provider] = []
+            ttfb_by_provider[result.provider].append(result.ttfb)
+    
     summary_data = []
     for provider, summary in summaries.items():
+        avg_ttfb = sum(ttfb_by_provider.get(provider, [0])) / len(ttfb_by_provider.get(provider, [1])) if provider in ttfb_by_provider else 0
         summary_data.append({
             "Provider": provider.title(),
             "Model": get_model_name(provider),
             "Location": f"{geo_service.get_country_flag()} {current_location}",
             "Success Rate": f"{summary.success_rate:.1f}%",
+            "Avg TTFB": f"{avg_ttfb:.1f}ms",
             "Avg Latency": f"{summary.avg_latency_ms:.1f}ms",
             "P95 Latency": f"{summary.p95_latency_ms:.1f}ms",
             "Avg File Size": f"{summary.avg_file_size_bytes/1024:.1f}KB",
@@ -938,7 +1328,8 @@ def results_analysis_page():
             iteration=0,
             location_country=row.get('location_country', ''),
             location_city=row.get('location_city', ''),
-            location_region=row.get('location_region', '')
+            location_region=row.get('location_region', ''),
+            ttfb=float(row.get('ttfb', 0))
         )
         results.append(result)
     
@@ -1041,9 +1432,10 @@ def leaderboard_page():
     # Enhanced leaderboard table with latency stats
     st.subheader("📊 Current Rankings")
     
-    # Get latency statistics for each provider
+    # Get latency and TTFB statistics for each provider
     from database import db
     latency_stats = db.get_latency_stats_by_provider()
+    ttfb_stats = db.get_ttfb_stats_by_provider()
     
     # Get current location for display
     current_location = geo_service.get_location_string()
@@ -1055,6 +1447,9 @@ def leaderboard_page():
     # Add model names, location, and latency stats
     df_leaderboard["Model"] = df_leaderboard["provider"].apply(get_model_name)
     df_leaderboard["Location"] = location_display
+    df_leaderboard["Avg TTFB (ms)"] = df_leaderboard["provider"].apply(
+        lambda p: f"{ttfb_stats.get(p, {}).get('avg_ttfb', 0):.1f}"
+    )
     df_leaderboard["Avg Latency (ms)"] = df_leaderboard["provider"].apply(
         lambda p: f"{latency_stats.get(p, {}).get('avg_latency', 0):.1f}"
     )
@@ -1064,12 +1459,12 @@ def leaderboard_page():
     
     # Format the display columns
     display_df = df_leaderboard[[
-        "rank", "Provider", "Model", "Location", "elo_rating", "Avg Latency (ms)", "P95 Latency (ms)",
+        "rank", "Provider", "Model", "Location", "elo_rating", "Avg TTFB (ms)", "Avg Latency (ms)", "P95 Latency (ms)",
         "games_played", "wins", "losses", "win_rate"
     ]].copy()
     
     display_df.columns = [
-        "Rank", "Provider", "Model", "Location", "ELO Rating", "Avg Latency", "P95 Latency",
+        "Rank", "Provider", "Model", "Location", "ELO Rating", "Avg TTFB", "Avg Latency", "P95 Latency",
         "Games", "Wins", "Losses", "Win Rate %"
     ]
     

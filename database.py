@@ -64,6 +64,12 @@ class BenchmarkDatabase:
         except:
             pass
         
+        # Add ttfb column for Time to First Byte
+        try:
+            cursor.execute('ALTER TABLE benchmark_results ADD COLUMN ttfb REAL DEFAULT 0')
+        except:
+            pass
+        
         # Create ELO ratings table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS elo_ratings (
@@ -129,8 +135,8 @@ class BenchmarkDatabase:
             INSERT INTO benchmark_results 
             (test_id, provider, voice, text, success, latency_ms, file_size_bytes, 
              error_message, metadata, timestamp, category, word_count, 
-             location_country, location_city, location_region, latency_1)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             location_country, location_city, location_region, latency_1, ttfb)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             test_id or f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             result.provider,
@@ -147,7 +153,8 @@ class BenchmarkDatabase:
             getattr(result, 'location_country', 'Unknown'),
             getattr(result, 'location_city', 'Unknown'),
             getattr(result, 'location_region', 'Unknown'),
-            getattr(result, 'latency_1', 0.0)
+            getattr(result, 'latency_1', 0.0),
+            getattr(result, 'ttfb', 0.0)
         ))
         
         conn.commit()
@@ -536,6 +543,62 @@ class BenchmarkDatabase:
                 'p99_ping': percentile(pings_sorted, 99),
                 'min_ping': pings_sorted[0] if pings_sorted else 0,
                 'max_ping': pings_sorted[-1] if pings_sorted else 0,
+                'total_tests': n
+            }
+        
+        return stats
+    
+    def get_ttfb_stats_by_provider(self) -> Dict[str, Dict]:
+        """Get TTFB (Time to First Byte) statistics for each provider"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # Get all successful results with TTFB data grouped by provider
+        cursor.execute('''
+            SELECT provider, ttfb 
+            FROM benchmark_results 
+            WHERE success = 1 AND ttfb > 0
+            ORDER BY provider, ttfb
+        ''')
+        results = cursor.fetchall()
+        conn.close()
+        
+        # Group by provider and calculate statistics
+        provider_ttfbs = {}
+        for provider, ttfb in results:
+            if provider not in provider_ttfbs:
+                provider_ttfbs[provider] = []
+            provider_ttfbs[provider].append(ttfb)
+        
+        # Calculate statistics for each provider
+        stats = {}
+        for provider, ttfbs in provider_ttfbs.items():
+            if not ttfbs:
+                continue
+            
+            ttfbs_sorted = sorted(ttfbs)
+            n = len(ttfbs_sorted)
+            
+            # Calculate percentiles
+            def percentile(data, p):
+                if not data:
+                    return 0
+                index = (p / 100) * (len(data) - 1)
+                if index.is_integer():
+                    return data[int(index)]
+                else:
+                    lower = data[int(index)]
+                    upper = data[int(index) + 1]
+                    return lower + (upper - lower) * (index - int(index))
+            
+            stats[provider] = {
+                'avg_ttfb': sum(ttfbs) / n if n > 0 else 0,
+                'median_ttfb': percentile(ttfbs_sorted, 50),
+                'p90_ttfb': percentile(ttfbs_sorted, 90),
+                'p95_ttfb': percentile(ttfbs_sorted, 95),
+                'p99_ttfb': percentile(ttfbs_sorted, 99),
+                'min_ttfb': ttfbs_sorted[0] if ttfbs_sorted else 0,
+                'max_ttfb': ttfbs_sorted[-1] if ttfbs_sorted else 0,
                 'total_tests': n
             }
         
