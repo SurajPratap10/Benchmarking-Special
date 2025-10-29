@@ -115,6 +115,7 @@ def main():
         align-items: center;
         gap: 10px;
         justify-content: flex-end;
+        position: relative;
     }
     .new-badge {
         animation: catchyPulse 1.5s ease-in-out infinite;
@@ -130,11 +131,46 @@ def main():
         color: #262730;
         font-size: 15px;
         margin: 0;
+        position: relative;
+        display: inline-block;
+    }
+    .feature-text strong {
+        position: relative;
+        display: inline-block;
+        padding-bottom: 5px;
+    }
+    .feature-text strong::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        overflow: hidden;
+        background: repeating-linear-gradient(
+            to right,
+            #808080 0px,
+            #808080 6px,
+            transparent 6px,
+            transparent 12px
+        );
+        background-size: 12px 2px;
+        animation: moveDots 1.5s linear infinite;
+    }
+    @keyframes moveDots {
+        0% { 
+            background-position: 0 0;
+        }
+        100% { 
+            background-position: 12px 0;
+        }
     }
     </style>
     <div class="feature-banner">
-        <span class="new-badge">NEW</span>
-        <p class="feature-text"><strong>Streaming Race</strong></p>
+        <span class="new-badge">LIVE NOW</span>
+        <p class="feature-text">
+            <strong>Streaming Race</strong>
+        </p>
     </div>
     """, unsafe_allow_html=True)
     
