@@ -1435,7 +1435,10 @@ def leaderboard_page():
     # Get latency and TTFB statistics for each provider
     from database import db
     latency_stats = db.get_latency_stats_by_provider()
-    ttfb_stats = db.get_ttfb_stats_by_provider()
+    try:
+        ttfb_stats = db.get_ttfb_stats_by_provider()
+    except Exception:
+        ttfb_stats = {}  # Gracefully handle if TTFB column doesn't exist yet
     
     # Get current location for display
     current_location = geo_service.get_location_string()
