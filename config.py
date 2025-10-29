@@ -107,6 +107,15 @@ TTS_PROVIDERS = {
         max_chars=5000,
         supports_streaming=True,
         model_name="Cartesia Sonic Turbo"
+    ),
+    "cartesia_sonic3": TTSConfig(
+        name="Cartesia Sonic 3",
+        api_key_env="CARTESIA_API_KEY",
+        base_url="https://api.cartesia.ai/tts/bytes",
+        supported_voices=["British Lady", "Conversational Lady", "Classy British Man", "Friendly Reading Man", "Midwestern Woman", "Professional Man", "Newsman"],
+        max_chars=5000,
+        supports_streaming=True,
+        model_name="Cartesia Sonic 3.0"
     )
 }
 

@@ -186,7 +186,7 @@ def quick_test_page():
     # Text input (full width)
     text_input = st.text_area(
         "Enter text to synthesize:",
-        value="Hello, this is a test of the text-to-speech system. How does it sound?",
+        value="Just to confirm, the co-applicant's name is spelled M-A-R-I-S-A, correct? I'll need her consent before I can proceed with income verification.",
         height=100,
         max_chars=1000
     )

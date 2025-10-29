@@ -1187,6 +1187,12 @@ class CartesiaTurboProvider(CartesiaTTSProvider):
     def __init__(self):
         super().__init__("cartesia_turbo", "sonic-turbo")
 
+class CartesiaSonic3Provider(CartesiaTTSProvider):
+    """Cartesia Sonic 3.0 TTS provider"""
+    
+    def __init__(self):
+        super().__init__("cartesia_sonic3", "sonic-3")
+
 class TTSProviderFactory:
     """Factory for creating TTS providers"""
     
@@ -1213,6 +1219,8 @@ class TTSProviderFactory:
             return CartesiaSonic2Provider()
         elif provider_id == "cartesia_turbo":
             return CartesiaTurboProvider()
+        elif provider_id == "cartesia_sonic3":
+            return CartesiaSonic3Provider()
         else:
             raise ValueError(f"Unknown provider: {provider_id}")
     
