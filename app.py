@@ -415,6 +415,7 @@ def display_quick_test_results(results: List[BenchmarkResult]):
                         </audio>
                         """
                         st.markdown(audio_html, unsafe_allow_html=True)
+                        st.caption(f"TTFB: {result.ttfb:.1f}ms")
                         st.caption(f"Latency: {result.latency_ms:.1f}ms")
                         st.caption(f"Size: {result.file_size_bytes/1024:.1f} KB")
                         
@@ -707,7 +708,9 @@ def display_blind_test_samples():
                         </audio>
                         """
                         st.markdown(audio_html, unsafe_allow_html=True)
-                        st.caption(f"{result.latency_ms:.1f}ms | {result.file_size_bytes/1024:.1f}KB")
+                        st.caption(f"TTFB: {result.ttfb:.1f}ms")
+                        st.caption(f"Latency: {result.latency_ms:.1f}ms")
+                        st.caption(f"Size: {result.file_size_bytes/1024:.1f} KB")
                         
                         # Download button
                         st.download_button(
@@ -893,7 +896,7 @@ def run_streaming_race(text: str, providers: List[str]):
             )
             
             # Show initial ping status
-            status_placeholders[provider_id].text(f"🔄 Starting...")
+            status_placeholders[provider_id].text(f"Starting...")
             
             # Use benchmark engine to run test (saves to database automatically)
             benchmark_result = await st.session_state.benchmark_engine.run_single_test(
@@ -913,7 +916,7 @@ def run_streaming_race(text: str, providers: List[str]):
                     if step == 0:
                         status_placeholders[provider_id].text(f"⚡ TTFB: {benchmark_result.ttfb:.0f}ms")
                     elif step < progress_steps:
-                        status_placeholders[provider_id].text(f"📦 {bytes_so_far / 1024:.1f}KB")
+                        status_placeholders[provider_id].text(f"{bytes_so_far / 1024:.1f}KB")
                     else:
                         status_placeholders[provider_id].text(f"✅ Done: {benchmark_result.latency_ms:.0f}ms")
                     
