@@ -26,6 +26,11 @@ OPENAI_API_KEY=your_openai_api_key_here
 # Get from: https://play.cartesia.ai/
 CARTESIA_API_KEY=your_cartesia_api_key_here
 
+# Sarvam AI API Key
+# Get from: https://www.sarvam.ai/
+# Example format: sk_akrybn7o_LsNsYewSlPfHpEukqZAB8yGX
+SARVAM_API_KEY=sk_akrybn7o_LsNsYewSlPfHpEukqZAB8yGX
+
 # Optional: Streamlit Configuration
 STREAMLIT_SERVER_PORT=8501
 STREAMLIT_SERVER_ADDRESS=0.0.0.0

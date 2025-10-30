@@ -116,6 +116,15 @@ TTS_PROVIDERS = {
         max_chars=5000,
         supports_streaming=True,
         model_name="Cartesia Sonic 3.0"
+    ),
+    "sarvam": TTSConfig(
+        name="Sarvam AI",
+        api_key_env="SARVAM_API_KEY",
+        base_url="https://api.sarvam.ai/text-to-speech",
+        supported_voices=["en-IN-male", "en-IN-female", "hi-IN-male", "hi-IN-female"],
+        max_chars=5000,
+        supports_streaming=False,
+        model_name="bulbul:v2"
     )
 }
 
