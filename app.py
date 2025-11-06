@@ -240,7 +240,7 @@ def main():
     elif page == "Leaderboard":
         leaderboard_page()
     elif page == "ROI Calculator":
-        roi_calculator_page()
+        roi_calculator_page() 
 
 def quick_test_page():
     """Quick test page for single TTS comparisons"""
@@ -393,7 +393,6 @@ def display_quick_test_results(results: List[BenchmarkResult]):
             "Location": get_location_display(result),
             "Success": "✅" if result.success else "❌",
             "TTFB (ms)": f"{result.ttfb:.1f}" if result.success and result.ttfb > 0 else "N/A",
-            "Latency (ms)": f"{result.latency_ms:.1f}" if result.success else "N/A",
             "File Size (KB)": f"{result.file_size_bytes / 1024:.1f}" if result.success else "N/A",
             "Voice": result.voice,
             "Error": result.error_message if not result.success else ""
@@ -409,14 +408,14 @@ def display_quick_test_results(results: List[BenchmarkResult]):
         col1, col2 = st.columns(2)
         
         with col1:
-            # Latency comparison
-            fig_latency = px.bar(
+            # TTFB comparison
+            fig_ttfb = px.bar(
                 x=[r.provider.title() for r in successful_results],
-                y=[r.latency_ms for r in successful_results],
-                title="Latency Comparison",
-                labels={"x": "Provider", "y": "Latency (ms)"}
+                y=[r.ttfb for r in successful_results],
+                title="TTFB Comparison",
+                labels={"x": "Provider", "y": "TTFB (ms)"}
             )
-            st.plotly_chart(fig_latency, use_container_width=True)
+            st.plotly_chart(fig_ttfb, use_container_width=True)
         
         with col2:
             # File size comparison
@@ -452,7 +451,6 @@ def display_quick_test_results(results: List[BenchmarkResult]):
                         """
                         st.markdown(audio_html, unsafe_allow_html=True)
                         st.caption(f"TTFB: {result.ttfb:.1f}ms")
-                        st.caption(f"Latency: {result.latency_ms:.1f}ms")
                         st.caption(f"Size: {result.file_size_bytes/1024:.1f} KB")
                         
                         # Download button for MP3
@@ -709,7 +707,6 @@ def display_blind_test_samples():
                 "Model": result.model_name,
                 "Location": get_location_display(result),
                 "TTFB (ms)": f"{result.ttfb:.1f}" if result.ttfb > 0 else "N/A",
-                "Latency (ms)": f"{result.latency_ms:.1f}",
                 "File Size (KB)": f"{result.file_size_bytes / 1024:.1f}",
                 "Your Choice": "🏆 Winner" if is_winner else ""
             })
@@ -745,7 +742,6 @@ def display_blind_test_samples():
                         """
                         st.markdown(audio_html, unsafe_allow_html=True)
                         st.caption(f"TTFB: {result.ttfb:.1f}ms")
-                        st.caption(f"Latency: {result.latency_ms:.1f}ms")
                         st.caption(f"Size: {result.file_size_bytes/1024:.1f} KB")
                         
                         # Download button
@@ -806,7 +802,7 @@ def streaming_race_page():
     """Streaming race page - visualize real-time TTS generation"""
     
     st.header("⚡ Streaming Race")
-    st.markdown("Watch TTS providers race in real-time! See Time to First Byte (TTFB) and total generation speed (Latency).")
+    st.markdown("Watch TTS providers race in real-time! See Time to First Byte (TTFB) for each provider.")
     
     # Get configuration status
     config_status = check_configuration()
@@ -838,7 +834,7 @@ def streaming_race_page():
     with col1:
         text_input = st.text_area(
             "Enter text to synthesize:",
-            value="The quick brown fox jumps over the lazy dog. This is a test of real-time speech synthesis speed and latency.",
+            value="The quick brown fox jumps over the lazy dog. This is a test of real-time speech synthesis speed.",
             height=100,
             max_chars=500
         )
@@ -954,7 +950,7 @@ def run_streaming_race(text: str, providers: List[str]):
                     elif step < progress_steps:
                         status_placeholders[provider_id].text(f"{bytes_so_far / 1024:.1f}KB")
                     else:
-                        status_placeholders[provider_id].text(f"✅ Done: {benchmark_result.latency_ms:.0f}ms")
+                        status_placeholders[provider_id].text(f"✅ Done: {benchmark_result.ttfb:.0f}ms")
                     
                     await asyncio.sleep(benchmark_result.latency_ms / progress_steps / 1000)  # Sleep in seconds
                 
@@ -1051,7 +1047,6 @@ def display_race_results(race_results: Dict[str, Any]):
             "Provider": provider.replace('_', ' ').title(),
             "Model": get_model_name(provider),
             "TTFB (ms)": f"{data['ttfb']:.1f}",
-            "Latency (ms)": f"{data['total_time']:.1f}",
             "Speed (char/s)": f"{speed:.1f}",
             "File Size (KB)": f"{data['file_size'] / 1024:.1f}"
         })
@@ -1076,17 +1071,17 @@ def display_race_results(race_results: Dict[str, Any]):
         st.plotly_chart(fig_ttfb, use_container_width=True)
     
     with col2:
-        # Latency comparison
-        fig_total = px.bar(
+        # File Size comparison
+        fig_size = px.bar(
             x=[r['Provider'] for r in results_data],
-            y=[float(r['Latency (ms)']) for r in results_data],
-            title="Total Latency",
-            labels={"x": "Provider", "y": "Latency (ms)"},
-            color=[float(r['Latency (ms)']) for r in results_data],
-            color_continuous_scale="RdYlGn_r"
+            y=[float(r['File Size (KB)']) for r in results_data],
+            title="File Size Comparison",
+            labels={"x": "Provider", "y": "File Size (KB)"},
+            color=[float(r['File Size (KB)']) for r in results_data],
+            color_continuous_scale="Blues"
         )
-        fig_total.update_layout(showlegend=False)
-        st.plotly_chart(fig_total, use_container_width=True)
+        fig_size.update_layout(showlegend=False)
+        st.plotly_chart(fig_size, use_container_width=True)
     
     # Audio playback
     st.subheader("🎧 Audio Samples")
@@ -1327,8 +1322,7 @@ def display_benchmark_summary(results: List[BenchmarkResult]):
             "Location": f"{geo_service.get_country_flag()} {current_location}",
             "Success Rate": f"{summary.success_rate:.1f}%",
             "Avg TTFB": f"{avg_ttfb:.1f}ms",
-            "Avg Latency": f"{summary.avg_latency_ms:.1f}ms",
-            "P95 Latency": f"{summary.p95_latency_ms:.1f}ms",
+            "P95 TTFB": f"{summary.p95_latency_ms:.1f}ms",
             "Avg File Size": f"{summary.avg_file_size_bytes/1024:.1f}KB",
             "Total Errors": summary.total_errors
         })
@@ -1416,10 +1410,31 @@ def display_analysis_charts(results: List[BenchmarkResult]):
         st.warning("No successful results to analyze.")
         return
     
-    # Latency distribution
-    st.subheader("⏰ Latency Distribution")
-    fig_latency = visualizations.create_latency_distribution(successful_results)
-    st.plotly_chart(fig_latency, use_container_width=True)
+    # TTFB distribution
+    st.subheader("⏰ TTFB Distribution")
+    # Create TTFB distribution instead of latency
+    ttfb_data = []
+    for result in successful_results:
+        if result.success and result.ttfb > 0:
+            ttfb_data.append({
+                "provider": result.provider.title(),
+                "ttfb": result.ttfb,
+                "category": result.metadata.get("category", "unknown")
+            })
+    
+    if ttfb_data:
+        import pandas as pd
+        df_ttfb = pd.DataFrame(ttfb_data)
+        fig_ttfb = px.box(
+            df_ttfb,
+            x="provider",
+            y="ttfb",
+            color="provider",
+            title="TTFB Distribution by Provider",
+            labels={"ttfb": "TTFB (ms)", "provider": "Provider"}
+        )
+        fig_ttfb.update_layout(height=400, showlegend=False)
+        st.plotly_chart(fig_ttfb, use_container_width=True)
     
     # Success rate by provider
     st.subheader("✅ Success Rate Analysis")
@@ -1427,25 +1442,7 @@ def display_analysis_charts(results: List[BenchmarkResult]):
     st.plotly_chart(fig_success, use_container_width=True)
     
     # Performance by category
-    st.subheader("📚 Performance by Category")
-    
-    category_data = {}
-    for result in successful_results:
-        category = result.metadata.get("category", "unknown")
-        if category not in category_data:
-            category_data[category] = {"latencies": [], "providers": []}
-        category_data[category]["latencies"].append(result.latency_ms)
-        category_data[category]["providers"].append(result.provider)
-    
-    if category_data:
-        fig_category = px.box(
-            x=[provider for cat_data in category_data.values() for provider in cat_data["providers"]],
-            y=[latency for cat_data in category_data.values() for latency in cat_data["latencies"]],
-            color=[cat for cat, cat_data in category_data.items() for _ in cat_data["latencies"]],
-            title="Latency by Category and Provider",
-            labels={"x": "Provider", "y": "Latency (ms)", "color": "Category"}
-        )
-        st.plotly_chart(fig_category, use_container_width=True)
+    # Category performance section removed - focusing on TTFB metrics
 
 def leaderboard_page():
     """ELO leaderboard page with persistent data"""
@@ -1468,12 +1465,11 @@ def leaderboard_page():
         # Fallback if visualization fails
         pass
     
-    # Enhanced leaderboard table with latency stats
+    # Enhanced leaderboard table with TTFB stats
     st.subheader("📊 Current Rankings")
     
-    # Get latency and TTFB statistics for each provider
+    # Get TTFB statistics for each provider
     from database import db
-    latency_stats = db.get_latency_stats_by_provider()
     try:
         ttfb_stats = db.get_ttfb_stats_by_provider()
     except Exception:
@@ -1486,27 +1482,24 @@ def leaderboard_page():
     df_leaderboard = pd.DataFrame(leaderboard)
     df_leaderboard["Provider"] = df_leaderboard["provider"].str.title()
     
-    # Add model names, location, and latency stats
+    # Add model names, location, and TTFB stats
     df_leaderboard["Model"] = df_leaderboard["provider"].apply(get_model_name)
     df_leaderboard["Location"] = location_display
     df_leaderboard["Avg TTFB (ms)"] = df_leaderboard["provider"].apply(
         lambda p: f"{ttfb_stats.get(p, {}).get('avg_ttfb', 0):.1f}"
     )
-    df_leaderboard["Avg Latency (ms)"] = df_leaderboard["provider"].apply(
-        lambda p: f"{latency_stats.get(p, {}).get('avg_latency', 0):.1f}"
-    )
-    df_leaderboard["P95 Latency (ms)"] = df_leaderboard["provider"].apply(
-        lambda p: f"{latency_stats.get(p, {}).get('p95_latency', 0):.1f}"
+    df_leaderboard["P95 TTFB (ms)"] = df_leaderboard["provider"].apply(
+        lambda p: f"{ttfb_stats.get(p, {}).get('p95_ttfb', 0):.1f}"
     )
     
     # Format the display columns
     display_df = df_leaderboard[[
-        "rank", "Provider", "Model", "Location", "elo_rating", "Avg TTFB (ms)", "Avg Latency (ms)", "P95 Latency (ms)",
+        "rank", "Provider", "Model", "Location", "elo_rating", "Avg TTFB (ms)", "P95 TTFB (ms)",
         "games_played", "wins", "losses", "win_rate"
     ]].copy()
     
     display_df.columns = [
-        "Rank", "Provider", "Model", "Location", "ELO Rating", "Avg TTFB", "Avg Latency", "P95 Latency",
+        "Rank", "Provider", "Model", "Location", "ELO Rating", "Avg TTFB", "P95 TTFB",
         "Games", "Wins", "Losses", "Win Rate %"
     ]
     
@@ -1530,7 +1523,6 @@ def leaderboard_page():
                 "Location": location_display,
                 "Total Tests": stats['total_tests'],
                 "Success Rate %": f"{stats['success_rate']:.1f}%",
-                "Avg Latency (ms)": f"{stats['avg_latency']:.1f}",
                 "Avg File Size (KB)": f"{stats['avg_file_size']/1024:.1f}"
             })
         
