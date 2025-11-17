@@ -11,8 +11,7 @@ Production-ready benchmarking tool for comparing Text-to-Speech (TTS) providers 
 - **Blind Testing**: Unbiased audio quality comparison
 - **Batch Testing**: Comprehensive benchmarks across diverse datasets
 - **Persistent Storage**: SQLite database for historical data
-- **Export Options**: JSON, CSV, Excel, and comprehensive report packages
-
+- 
 ## Quick Start
 
 ### Prerequisites
@@ -146,11 +145,3 @@ docker run -p 8501:8501 --env-file .env tts-benchmark
 ## License
 
 MIT License - see LICENSE file for details
-
-## Support
-
-For issues or questions, please open a GitHub issue.
-
----
-
-**Built for production TTS benchmarking**
