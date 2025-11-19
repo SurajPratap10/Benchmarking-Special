@@ -605,14 +605,16 @@ def leaderboard_page():
         "games_played", "wins", "losses", "win_rate"
     ]].copy()
     
-    # Convert games_played to actual test count
-    # Each blind test involves 2 providers, and each vote increments games_played for both
+    # Convert games_played, wins, and losses to actual test count
+    # Each blind test involves 2 providers, and each vote increments counts for both
     # So we divide by 2 to get the actual number of tests
     display_df["Total Tests"] = (display_df["games_played"] / 2).astype(int)
+    display_df["Wins"] = (display_df["wins"] / 2).astype(int)
+    display_df["Losses"] = (display_df["losses"] / 2).astype(int)
     
     display_df = display_df[[
         "rank", "Provider", "Model", "Location",
-        "Total Tests", "wins", "losses", "win_rate"
+        "Total Tests", "Wins", "Losses", "win_rate"
     ]].copy()
     
     display_df.columns = [
