@@ -549,11 +549,26 @@ class MurfFalconOct23TTSProvider(TTSProvider):
             "Content-Type": "application/json"
         }
         
-        # Murf Falcon Oct 23 API payload structure
+        # Map voices to their locales
+        voice_locale_map = {
+            "Alicia": "ta-IN",
+            "Murali": "ta-IN",
+            "Josie": "te-IN",
+            "Ronnie": "te-IN",
+            "Julia": "kn-IN",
+            "Maverick": "kn-IN",
+            "Rajesh": "kn-IN"
+        }
+        
+        # Get locale for the voice, default to en-US
+        locale = voice_locale_map.get(request.voice, "en-US")
+        
+        # Murf Falcon Oct 23 API payload structure with locale
         payload = {
             "text": request.text,
             "voiceId": request.voice,
-            "format": "mp3",
+            "locale": locale,
+            "audioFormat": "MP3",
             "sampleRate": 24000,
             "model": "FALCON"
         }
@@ -1373,30 +1388,10 @@ class TTSProviderFactory:
     @staticmethod
     def create_provider(provider_id: str) -> TTSProvider:
         """Create a TTS provider instance"""
-        if provider_id == "murf":
-            return MurfAITTSProvider()
-        elif provider_id == "murf_falcon":
-            return MurfFalconTTSProvider()
-        elif provider_id == "murf_falcon_oct13":
-            return MurfFalconOct13TTSProvider()
-        elif provider_id == "murf_falcon_oct23":
+        if provider_id == "murf_falcon_oct23":
             return MurfFalconOct23TTSProvider()
-        elif provider_id == "deepgram":
-            return DeepgramTTSProvider()
-        elif provider_id == "deepgram_aura2":
-            return DeepgramAura2TTSProvider()
         elif provider_id == "elevenlabs":
             return ElevenLabsTTSProvider()
-        elif provider_id == "openai":
-            return OpenAITTSProvider()
-        elif provider_id == "cartesia_sonic2":
-            return CartesiaSonic2Provider()
-        elif provider_id == "cartesia_turbo":
-            return CartesiaTurboProvider()
-        elif provider_id == "cartesia_sonic3":
-            return CartesiaSonic3Provider()
-        elif provider_id == "sarvam":
-            return SarvamTTSProvider()
         else:
             raise ValueError(f"Unknown provider: {provider_id}")
     

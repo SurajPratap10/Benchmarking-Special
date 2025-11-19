@@ -13,7 +13,7 @@ import streamlit as st
 @dataclass
 class SecurityConfig:
     """Security configuration settings"""
-    max_text_length: int = 1000
+    max_text_length: int = 5000  # Increased to support longer multilingual text
     max_requests_per_minute: int = 60
     api_key_min_length: int = 20
     enable_rate_limiting: bool = True
@@ -74,10 +74,23 @@ class InputValidator:
             if pattern in text_lower:
                 return False, f"Text contains potentially unsafe content: {pattern}"
         
-        # Check for excessive special characters (potential injection attempts)
-        special_char_count = sum(1 for char in text if not char.isalnum() and not char.isspace())
-        if special_char_count > len(text) * 0.3:  # More than 30% special characters
-            return False, "Text contains excessive special characters"
+        # Allow multilingual text (English, Hindi, Tamil, Telugu, Kannada)
+        # Use Unicode-aware checks that support Devanagari, Tamil, Telugu, and Kannada scripts
+        # We'll be lenient with special characters to support various scripts and punctuation
+        
+        # Check for balanced special characters - only fail if there are suspicious patterns
+        # Unicode ranges for supported scripts:
+        # - Basic Latin: U+0000-U+007F (English)
+        # - Latin Extended: U+0080-U+00FF
+        # - Devanagari: U+0900-U+097F (Hindi)
+        # - Tamil: U+0B80-U+0BFF
+        # - Telugu: U+0C00-U+0C7F
+        # - Kannada: U+0C80-U+0CFF
+        
+        # More permissive check - only flag if there are too many control characters or unusual symbols
+        control_char_count = sum(1 for char in text if ord(char) < 32 and char not in '\n\r\t')
+        if control_char_count > 0:
+            return False, "Text contains invalid control characters"
         
         return True, None
     

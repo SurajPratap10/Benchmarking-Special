@@ -18,59 +18,22 @@ class TTSConfig:
 
 # TTS Provider Configurations
 TTS_PROVIDERS = {
-    "murf": TTSConfig(
-        name="Murf AI",
-        api_key_env="MURF_API_KEY", 
-        base_url="https://api.murf.ai/v1/speech/generate",
-        supported_voices=["en-US-natalie", "en-US-miles", "en-US-amara", "en-US-maverick", "en-US-ken", "en-US-terrell"],
-        max_chars=3000,
-        supports_streaming=False,
-        model_name="Murf AI TTS v1"
-    ),
-    "murf_falcon": TTSConfig(
-        name="Murf AI Falcon",
-        api_key_env="MURF_API_KEY",
-        base_url="https://api.murf.ai/v1/speech/turbo-stream",
-        supported_voices=["en-US-natalie", "en-US-miles", "en-US-amara", "en-US-maverick", "en-US-ken", "en-US-terrell"],
-        max_chars=3000,
-        supports_streaming=True,
-        model_name="Murf Falcon Turbo"
-    ),
-    "murf_falcon_oct13": TTSConfig(
-        name="Murf Falcon Oct 13",
-        api_key_env="MURF_API_KEY",
-        base_url="https://api.murf.ai/v1/speech/stream",
-        supported_voices=["en-US-wayne", "en-US-marcus", "en-US-natalie", "en-US-miles", "en-US-amara", "en-US-maverick", "en-US-ken", "en-US-terrell"],
-        max_chars=3000,
-        supports_streaming=True,
-        model_name="FALCON"
-    ),
     "murf_falcon_oct23": TTSConfig(
-        name="Murf Falcon Oct 23",
+        name="Murf Falcon",
         api_key_env="MURF_API_KEY",
         base_url="https://global.api.murf.ai/v1/speech/stream",
-        supported_voices=["Matthew", "en-US-wayne", "en-UK-hazel", "en-US-marcus", "en-US-natalie", "en-US-miles", "en-US-amara", "en-US-maverick", "en-US-ken", "en-US-terrell"],
-        max_chars=3000,
+        supported_voices=[
+            "Alicia",      # Tamil (ta-IN)
+            "Murali",      # Tamil (ta-IN)
+            "Josie",       # Telugu (te-IN)
+            "Ronnie",      # Telugu (te-IN)
+            "Julia",       # Kannada (kn-IN)
+            "Maverick",    # Kannada (kn-IN)
+            "Rajesh"       # Kannada (kn-IN)
+        ],
+        max_chars=5000,  # Increased to support longer multilingual text
         supports_streaming=True,
         model_name="FALCON"
-    ),
-    "deepgram": TTSConfig(
-        name="Deepgram Aura 1",
-        api_key_env="DEEPGRAM_API_KEY",
-        base_url="https://api.deepgram.com/v1/speak",
-        supported_voices=["aura-asteria-en", "aura-luna-en", "aura-stella-en", "aura-athena-en", "aura-hera-en", "aura-orion-en"],
-        max_chars=2000,
-        supports_streaming=True,
-        model_name="aura-1"
-    ),
-    "deepgram_aura2": TTSConfig(
-        name="Deepgram Aura 2",
-        api_key_env="DEEPGRAM_API_KEY",
-        base_url="https://api.deepgram.com/v1/speak",
-        supported_voices=["aura-2-asteria-en", "aura-2-luna-en", "aura-2-stella-en", "aura-2-athena-en", "aura-2-hera-en", "aura-2-orion-en"],
-        max_chars=2000,
-        supports_streaming=True,
-        model_name="aura-2"
     ),
     "elevenlabs": TTSConfig(
         name="ElevenLabs Flash",
@@ -80,51 +43,6 @@ TTS_PROVIDERS = {
         max_chars=5000,
         supports_streaming=True,
         model_name="eleven_flash_v2_5"
-    ),
-    "openai": TTSConfig(
-        name="OpenAI",
-        api_key_env="OPENAI_API_KEY",
-        base_url="https://api.openai.com/v1/audio/speech",
-        supported_voices=["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
-        max_chars=4096,
-        supports_streaming=True,
-        model_name="gpt-4o-mini-tts"
-    ),
-    "cartesia_sonic2": TTSConfig(
-        name="Cartesia Sonic 2.0",
-        api_key_env="CARTESIA_API_KEY",
-        base_url="https://api.cartesia.ai/tts/bytes",
-        supported_voices=["British Lady", "Conversational Lady", "Classy British Man", "Friendly Reading Man", "Midwestern Woman", "Professional Man", "Newsman"],
-        max_chars=5000,
-        supports_streaming=True,
-        model_name="Cartesia Sonic 2.0"
-    ),
-    "cartesia_turbo": TTSConfig(
-        name="Cartesia Sonic Turbo",
-        api_key_env="CARTESIA_API_KEY",
-        base_url="https://api.cartesia.ai/tts/bytes",
-        supported_voices=["British Lady", "Conversational Lady", "Classy British Man", "Friendly Reading Man", "Midwestern Woman", "Professional Man", "Newsman"],
-        max_chars=5000,
-        supports_streaming=True,
-        model_name="Cartesia Sonic Turbo"
-    ),
-    "cartesia_sonic3": TTSConfig(
-        name="Cartesia Sonic 3",
-        api_key_env="CARTESIA_API_KEY",
-        base_url="https://api.cartesia.ai/tts/bytes",
-        supported_voices=["British Lady", "Conversational Lady", "Classy British Man", "Friendly Reading Man", "Midwestern Woman", "Professional Man", "Newsman"],
-        max_chars=5000,
-        supports_streaming=True,
-        model_name="Cartesia Sonic 3.0"
-    ),
-    "sarvam": TTSConfig(
-        name="Sarvam AI",
-        api_key_env="SARVAM_API_KEY",
-        base_url="https://api.sarvam.ai/text-to-speech",
-        supported_voices=["en-IN-male", "en-IN-female", "hi-IN-male", "hi-IN-female"],
-        max_chars=5000,
-        supports_streaming=False,
-        model_name="bulbul:v2"
     )
 }
 

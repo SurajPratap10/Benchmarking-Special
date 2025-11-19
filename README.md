@@ -1,17 +1,20 @@
 # TTS Benchmarking Tool
 
-Production-ready benchmarking tool for comparing Text-to-Speech (TTS) providers with comprehensive metrics and analysis.
+Production-ready benchmarking tool for comparing Text-to-Speech (TTS) providers for Tamil, Telugu, and Kannada languages.
 
 ## Features
 
-- **Multi-Provider Support**: OpenAI, Murf AI, Deepgram, ElevenLabs, Cartesia
-- **Comprehensive Metrics**: Latency, success rates, file sizes, quality analysis
+- **Multilingual Support**: Tamil (தமிழ்), Telugu (తెలుగు), Kannada (ಕನ್ನಡ), Hindi (हिंदी), and English
+- **Provider Comparison**: Murf Falcon Oct 23 and ElevenLabs
+- **7 Voices**: 
+  - Tamil: Alicia, Murali
+  - Telugu: Josie, Ronnie
+  - Kannada: Julia, Maverick, Rajesh
 - **ELO Rating System**: Chess-style rankings for objective provider comparison
-- **Interactive Visualizations**: Real-time charts and analytics
 - **Blind Testing**: Unbiased audio quality comparison
-- **Batch Testing**: Comprehensive benchmarks across diverse datasets
+- **Leaderboard**: Track provider performance over time
 - **Persistent Storage**: SQLite database for historical data
-- 
+- **Security**: Input validation for multilingual text (supports Indian scripts) 
 ## Quick Start
 
 ### Prerequisites
@@ -48,13 +51,12 @@ Access the app at: http://localhost:8501
 Create a `.env` file with your API credentials:
 
 ```bash
-# Required: At least one provider API key
-OPENAI_API_KEY=your_openai_api_key_here
+# Required: Both provider API keys for full functionality
 MURF_API_KEY=your_murf_api_key_here
-DEEPGRAM_API_KEY=your_deepgram_api_key_here
 ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
-CARTESIA_API_KEY=your_cartesia_api_key_here
 ```
+
+**Note**: You need at least one API key to use the tool, but having both allows for proper blind testing comparison.
 
 ## Core Components
 
@@ -74,29 +76,37 @@ CARTESIA_API_KEY=your_cartesia_api_key_here
 
 ## Usage
 
-### Quick Test
-1. Enter text prompt
-2. Select providers and voices
-3. Click "Generate & Compare"
-4. View side-by-side results with audio playback
+The application has two main screens:
 
-### Blind Test
-1. Generate audio from all configured providers
-2. Listen to randomized samples (labeled A, B, C, etc.)
-3. Vote for your favorite
-4. Providers revealed after voting
+### 1. Blind Test
+1. Enter text in any supported language (Tamil, Telugu, Kannada, Hindi, or English)
+2. Use the sample texts provided for quick testing
+3. Click "Generate Blind Test"
+4. Listen to randomized audio samples (labeled A, B, etc.)
+5. Vote for your favorite audio quality
+6. Providers are revealed after voting
+7. ELO ratings automatically updated
 
-### Batch Benchmark
-1. Configure test parameters (samples, categories, lengths)
-2. Prepare test dataset
-3. Run comprehensive benchmark
-4. Analyze detailed results and export data
+**Features:**
+- Unbiased comparison (provider names hidden during voting)
+- Support for multilingual text input
+- Sample texts in all 5 languages
+- Character counter (up to 5000 characters)
+- Download MP3 files after results
 
-### Results Analysis
-- Filter by provider, category, or success status
-- View latency distributions and performance metrics
-- Analyze error patterns
-- Export results in multiple formats
+### 2. Leaderboard
+- View ELO-based rankings of TTS providers
+- See provider statistics (success rate, avg TTFB, P95 TTFB)
+- Track voting history and user preferences
+- Location-based metrics
+- Historical performance data
+
+**Supported Languages:**
+- Tamil (தமிழ்): Voices - Alicia, Murali
+- Telugu (తెలుగు): Voices - Josie, Ronnie  
+- Kannada (ಕನ್ನಡ): Voices - Julia, Maverick, Rajesh
+- Hindi (हिंदी): All voices support
+- English: All voices support
 
 ## Deployment
 
@@ -114,10 +124,12 @@ docker run -p 8501:8501 --env-file .env tts-benchmark
 ## Security
 
 - Environment-based API key configuration
-- Input validation and sanitization
+- Multilingual input validation (supports Devanagari, Tamil, Telugu, Kannada scripts)
 - Rate limiting (60 requests/minute per session)
+- Character limit: 5000 characters per request
 - Secure session management
 - No permanent audio storage
+- XSS and injection attack prevention
 
 ## Database
 
@@ -126,14 +138,6 @@ docker run -p 8501:8501 --env-file .env tts-benchmark
   - ELO ratings and game history
   - Provider statistics
   - User voting data
-
-## Export Formats
-
-- **JSON**: Raw results with metadata
-- **CSV**: Flattened results for analysis
-- **Excel**: Multi-sheet workbook with summaries
-- **Comprehensive Report**: Full analysis with comparisons
-- **ZIP Package**: All formats bundled together
 
 ## Performance
 
