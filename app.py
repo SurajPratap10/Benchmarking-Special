@@ -261,7 +261,7 @@ def generate_blind_test_samples(text: str, providers: List[str], language: str):
     # Map language to appropriate voices and providers
     language_voice_map = {
         "Tamil": {
-            "murf_falcon_oct23": ["Alicia", "Murali"],
+            "murf_falcon_oct23": ["Murali", "Alicia"],
             "elevenlabs": ["Rachel"]  # English voice, but will try
         },
         "Telugu": {
