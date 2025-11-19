@@ -192,15 +192,13 @@ def blind_test_page():
     sample_texts = {
         "Tamil": "வணக்கம். இது பேச்சு தொகுப்பு தரத்தின் ஒரு சோதனை. குரல் தெளிவாக உள்ளதா?",
         "Telugu": "నమస్కారం. ఇది స్పీచ్ సింథసిస్ నాణ్యత యొక్క పరీక్ష. వాయిస్ స్పష్టంగా ఉందా?",
-        "Kannada": "ನಮಸ್ಕಾರ. ಇದು ಭಾಷಣ ಸಂಶ್ಲೇಷಣೆ ಗುಣಮಟ್ಟದ ಪರೀಕ್ಷೆ. ಧ್ವನಿ ಸ್ಪಷ್ಟವಾಗಿದೆಯೇ?",
-        "Hindi": "नमस्ते। यह वाक् संश्लेषण गुणवत्ता का एक परीक्षण है। आवाज साफ है?",
-        "English": "Hello. This is a test of speech synthesis quality. Is the voice clear?"
+        "Kannada": "ನಮಸ್ಕಾರ. ಇದು ಭಾಷಣ ಸಂಶ್ಲೇಷಣೆ ಗುಣಮಟ್ಟದ ಪರೀಕ್ಷೆ. ಧ್ವನಿ ಸ್ಪಷ್ಟವಾಗಿದೆಯೇ?"
     }
     
     # Language selection with auto-update
     language = st.selectbox(
         "Select Language:",
-        ["Tamil", "Telugu", "Kannada", "English", "Hindi"],
+        ["Tamil", "Telugu", "Kannada"],
         key="language_selector"
     )
     
@@ -272,14 +270,6 @@ def generate_blind_test_samples(text: str, providers: List[str], language: str):
         },
         "Kannada": {
             "murf_falcon_oct23": ["Julia", "Maverick", "Rajesh"],
-            "elevenlabs": ["Rachel"]  # English voice, but will try
-        },
-        "English": {
-            "murf_falcon_oct23": ["Alicia", "Murali"],
-            "elevenlabs": ["Rachel", "Domi", "Bella"]
-        },
-        "Hindi": {
-            "murf_falcon_oct23": ["Alicia", "Murali"],
             "elevenlabs": ["Rachel"]  # English voice, but will try
         }
     }
