@@ -474,9 +474,8 @@ def display_blind_test_samples():
                 "Provider": result.provider.title(),
                 "Model": result.model_name,
                 "Location": get_location_display(result),
-                "TTFB (ms)": f"{result.ttfb:.1f}" if result.ttfb > 0 else "N/A",
                 "File Size (KB)": f"{result.file_size_bytes / 1024:.1f}",
-                    "Your Choice": "WINNER" if is_winner else ""
+                "Your Choice": "WINNER" if is_winner else ""
             })
         
         df = pd.DataFrame(comparison_data)
@@ -509,7 +508,6 @@ def display_blind_test_samples():
                         </audio>
                         """
                         st.markdown(audio_html, unsafe_allow_html=True)
-                        st.caption(f"TTFB: {result.ttfb:.1f}ms")
                         st.caption(f"Size: {result.file_size_bytes/1024:.1f} KB")
                         
                         # Download button
@@ -587,15 +585,8 @@ def leaderboard_page():
         # Fallback if visualization fails
         pass
     
-    # Enhanced leaderboard table with TTFB stats
+    # Leaderboard table
     st.subheader("Current Rankings")
-    
-    # Get TTFB statistics for each provider
-    from database import db
-    try:
-        ttfb_stats = db.get_ttfb_stats_by_provider()
-    except Exception:
-        ttfb_stats = {}  # Gracefully handle if TTFB column doesn't exist yet
     
     # Get current location for display
     current_location = geo_service.get_location_string()
@@ -604,52 +595,22 @@ def leaderboard_page():
     df_leaderboard = pd.DataFrame(leaderboard)
     df_leaderboard["Provider"] = df_leaderboard["provider"].str.title()
     
-    # Add model names, location, and TTFB stats
+    # Add model names and location
     df_leaderboard["Model"] = df_leaderboard["provider"].apply(get_model_name)
     df_leaderboard["Location"] = location_display
-    df_leaderboard["Avg TTFB (ms)"] = df_leaderboard["provider"].apply(
-        lambda p: f"{ttfb_stats.get(p, {}).get('avg_ttfb', 0):.1f}"
-    )
-    df_leaderboard["P95 TTFB (ms)"] = df_leaderboard["provider"].apply(
-        lambda p: f"{ttfb_stats.get(p, {}).get('p95_ttfb', 0):.1f}"
-    )
     
-    # Format the display columns
+    # Format the display columns (removed ELO, TTFB columns)
     display_df = df_leaderboard[[
-        "rank", "Provider", "Model", "Location", "elo_rating", "Avg TTFB (ms)", "P95 TTFB (ms)",
+        "rank", "Provider", "Model", "Location",
         "games_played", "wins", "losses", "win_rate"
     ]].copy()
     
     display_df.columns = [
-        "Rank", "Provider", "Model", "Location", "ELO Rating", "Avg TTFB", "P95 TTFB",
-        "Games", "Wins", "Losses", "Win Rate %"
+        "Rank", "Provider", "Model", "Location",
+        "Total Tests", "Wins", "Losses", "Win Rate %"
     ]
     
     st.dataframe(display_df, use_container_width=True, hide_index=True)
-    
-    # Provider statistics
-    st.subheader("Provider Statistics")
-    
-    # Import database to get provider stats
-    from database import db
-    provider_stats = db.get_provider_stats()
-    
-    if provider_stats:
-        stats_data = []
-        location_display = f"{geo_service.get_country_flag()} {geo_service.get_location_string()}"
-        
-        for provider, stats in provider_stats.items():
-            stats_data.append({
-                "Provider": provider.title(),
-                "Model": get_model_name(provider),
-                "Location": location_display,
-                "Total Tests": stats['total_tests'],
-                "Success Rate %": f"{stats['success_rate']:.1f}%",
-                "Avg File Size (KB)": f"{stats['avg_file_size']/1024:.1f}"
-            })
-        
-        stats_df = pd.DataFrame(stats_data)
-        st.dataframe(stats_df, use_container_width=True, hide_index=True)
     
     # User voting statistics
     st.subheader("User Voting Statistics")
