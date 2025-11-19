@@ -266,11 +266,11 @@ def generate_blind_test_samples(text: str, providers: List[str], language: str):
         },
         "Telugu": {
             "murf_falcon_oct23": ["Josie", "Ronnie"],
-            "elevenlabs": ["Rachel"]  # English voice, but will try
+            "elevenlabs": ["Bella"]  # English voice, but will try
         },
         "Kannada": {
             "murf_falcon_oct23": ["Julia", "Maverick", "Rajesh"],
-            "elevenlabs": ["Rachel"]  # English voice, but will try
+            "elevenlabs": ["Domi"]  # English voice, but will try
         }
     }
     
