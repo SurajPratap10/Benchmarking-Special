@@ -523,13 +523,13 @@ class MurfFalconOct13TTSProvider(TTSProvider):
         return self.config.supported_voices
 
 class MurfFalconOct23TTSProvider(TTSProvider):
-    """Murf Falcon Oct 23 TTS provider implementation (Global Stream Endpoint)"""
+    """Murf Falcon TTS provider implementation (Global Stream Endpoint)"""
     
     def __init__(self):
         super().__init__("murf_falcon_oct23")
     
     async def generate_speech(self, request: TTSRequest) -> TTSResult:
-        """Generate speech using Murf Falcon Oct 23 API (Global Stream)"""
+        """Generate speech using Murf Falcon API (Global Stream)"""
         start_time = time.time()
         
         # Validate request
@@ -563,7 +563,7 @@ class MurfFalconOct23TTSProvider(TTSProvider):
         # Get locale for the voice, default to en-US
         locale = voice_locale_map.get(request.voice, "en-US")
         
-        # Murf Falcon Oct 23 API payload structure with locale
+        # Murf Falcon API payload structure with locale
         payload = {
             "text": request.text,
             "voiceId": request.voice,
@@ -635,7 +635,7 @@ class MurfFalconOct23TTSProvider(TTSProvider):
             )
     
     def get_available_voices(self) -> list:
-        """Get available Murf Falcon Oct 23 voices"""
+        """Get available Murf Falcon voices"""
         return self.config.supported_voices
 
 class DeepgramTTSProvider(TTSProvider):

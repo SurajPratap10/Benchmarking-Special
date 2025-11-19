@@ -1,0 +1,23 @@
+════════════════════════════════════════════════════════════════
+   COPY AND RUN THIS COMMAND IN YOUR TERMINAL:
+════════════════════════════════════════════════════════════════
+
+cd /Users/surajpratap/Downloads/Benchmarking-Telugu && git push special main
+
+════════════════════════════════════════════════════════════════
+
+When prompted:
+  Username: SurajPratap10
+  Password: [Your GitHub Personal Access Token]
+
+════════════════════════════════════════════════════════════════
+
+Need a token? Get one here:
+https://github.com/settings/tokens
+
+Click "Generate new token (classic)"
+Select scope: repo
+Copy the token and use it as password
+
+════════════════════════════════════════════════════════════════
+

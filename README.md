@@ -4,8 +4,8 @@ Production-ready benchmarking tool for comparing Text-to-Speech (TTS) providers 
 
 ## Features
 
-- **Multilingual Support**: Tamil (தமிழ்), Telugu (తెలుగు), Kannada (ಕನ್ನಡ), Hindi (हिंदी), and English
-- **Provider Comparison**: Murf Falcon Oct 23 and ElevenLabs
+- **Multilingual Support**: Tamil (தமிழ்), Telugu (తెలుగు), Kannada (ಕನ್ನಡ)
+- **Provider Comparison**: Murf Falcon and ElevenLabs
 - **7 Voices**: 
   - Tamil: Alicia, Murali
   - Telugu: Josie, Ronnie
