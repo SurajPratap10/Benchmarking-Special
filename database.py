@@ -510,17 +510,15 @@ class BenchmarkDatabase:
         cursor = conn.cursor()
         
         if language == "all":
-            # Get total votes per provider across all languages (including NULL language as "all")
+            # Get total votes per provider across ALL languages (include all votes regardless of language value)
             cursor.execute('''
                 SELECT winner, COUNT(*) as wins FROM user_votes 
-                WHERE language IS NULL OR language = 'all' OR language = ''
                 GROUP BY winner
             ''')
             wins = dict(cursor.fetchall())
             
             cursor.execute('''
                 SELECT loser, COUNT(*) as losses FROM user_votes 
-                WHERE language IS NULL OR language = 'all' OR language = ''
                 GROUP BY loser  
             ''')
             losses = dict(cursor.fetchall())
@@ -528,7 +526,6 @@ class BenchmarkDatabase:
             # Get recent votes
             cursor.execute('''
                 SELECT winner, loser, timestamp FROM user_votes 
-                WHERE language IS NULL OR language = 'all' OR language = ''
                 ORDER BY timestamp DESC LIMIT 10
             ''')
         else:
