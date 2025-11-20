@@ -96,7 +96,7 @@ def create_success_rate_chart(results: List[BenchmarkResult]) -> go.Figure:
     return fig
 
 def create_leaderboard_chart(leaderboard: List[Dict[str, Any]]) -> go.Figure:
-    """Create ELO leaderboard chart"""
+    """Create leaderboard chart"""
     
     providers = [item["provider"].title() for item in leaderboard]
     ratings = [item["elo_rating"] for item in leaderboard]
@@ -110,15 +110,15 @@ def create_leaderboard_chart(leaderboard: List[Dict[str, Any]]) -> go.Figure:
             orientation='h',
             text=[f"#{rank}" for rank in ranks],
             textposition='inside',
-            hovertemplate="<b>%{y}</b><br>ELO Rating: %{x}<br>Rank: #%{customdata}<extra></extra>",
+            hovertemplate="<b>%{y}</b><br>Ranking: %{x}<br>Rank: #%{customdata}<extra></extra>",
             customdata=ranks,
             marker_color=px.colors.sequential.Viridis[:len(providers)]
         )
     ])
     
     fig.update_layout(
-        title="ELO Leaderboard",
-        xaxis_title="ELO Rating",
+        title="Leaderboard",
+        xaxis_title="Ranking",
         yaxis_title="Provider",
         height=max(300, len(providers) * 50),
         yaxis=dict(categoryorder="total ascending")

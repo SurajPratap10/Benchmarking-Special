@@ -712,7 +712,6 @@ def generate_blind_test_samples(text: str, providers: List[str], language: str):
             pass
         elif result and result.success:
             results.append(result)
-            st.success(f"SUCCESS: {provider_name} generated audio")
         elif result:
             st.error(f"ERROR: {provider_name} failed - {result.error_message}")
         else:
@@ -747,7 +746,6 @@ def generate_blind_test_samples(text: str, providers: List[str], language: str):
     st.session_state.blind_test_voted = False
     st.session_state.blind_test_vote_choice = None
     
-    st.success(f"SUCCESS: Generated {len(results)} blind test samples!")
     st.rerun()
 
 def display_blind_test_samples():
@@ -856,7 +854,7 @@ def display_blind_test_samples():
         st.dataframe(df, use_container_width=True, hide_index=True)
         
         # Show audio samples with labels
-        st.subheader("Listen Again (with provider names)")
+        st.subheader("Listen Audios and Vote")
         
         # Display audio players in rows of 4
         sorted_samples = sorted(samples, key=lambda r: r.blind_label)
@@ -943,7 +941,7 @@ def leaderboard_page():
     """ELO leaderboard page with persistent data, broken down by language"""
     
     st.header("Leaderboard")
-    st.markdown("ELO-based rankings of TTS providers by language")
+    st.markdown("Rankings of TTS providers by language")
     
     # Language selection for leaderboard
     available_languages = ["All Languages", "Tamil", "Telugu", "Kannada", "Marathi", "Punjabi", "Bengali", "English-India", "Hindi"]
