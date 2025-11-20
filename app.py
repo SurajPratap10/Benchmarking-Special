@@ -605,9 +605,20 @@ def leaderboard_page():
     except:
         pass
     
+    # Set default to "All Languages" (index 0) unless user has previously selected something
+    if "leaderboard_language_filter" not in st.session_state:
+        st.session_state.leaderboard_language_filter = "All Languages"
+    
+    # Find the index of the current selection
+    try:
+        default_index = available_languages.index(st.session_state.leaderboard_language_filter)
+    except ValueError:
+        default_index = 0  # Default to "All Languages"
+    
     selected_language = st.selectbox(
         "Filter by Language:",
         available_languages,
+        index=default_index,
         key="leaderboard_language_filter",
         help="Select a language to see rankings for that language only, or 'All Languages' to see combined rankings"
     )
