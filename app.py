@@ -629,19 +629,12 @@ def leaderboard_page():
     # Get persistent leaderboard data for selected language
     leaderboard = st.session_state.benchmark_engine.get_leaderboard(db_language)
     
-    # If no data for specific language, fall back to "all" and show a message
-    showing_fallback = False
-    if not leaderboard and selected_language != "All Languages":
-        leaderboard = st.session_state.benchmark_engine.get_leaderboard("all")
-        if leaderboard:
-            showing_fallback = True
-            st.info(f"ℹ️ No separate rankings available for {selected_language} yet. Showing combined rankings from all languages. Run blind tests with {selected_language} to generate language-specific rankings.")
-    
+    # If no data for selected language, show message and don't display leaderboard
     if not leaderboard:
         if selected_language == "All Languages":
             st.info("No leaderboard data available. Run benchmarks to generate rankings.")
         else:
-            st.info(f"No leaderboard data available for {selected_language}. Run benchmarks with this language to generate rankings.")
+            st.info(f"No leaderboard data available for {selected_language}. Run blind tests with this language to generate rankings.")
         return
     
     # Display leaderboard chart
