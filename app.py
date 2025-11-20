@@ -192,13 +192,18 @@ def blind_test_page():
     sample_texts = {
         "Tamil": "வணக்கம். இது பேச்சு தொகுப்பு தரத்தின் ஒரு சோதனை. குரல் தெளிவாக உள்ளதா?",
         "Telugu": "నమస్కారం. ఇది స్పీచ్ సింథసిస్ నాణ్యత యొక్క పరీక్ష. వాయిస్ స్పష్టంగా ఉందా?",
-        "Kannada": "ನಮಸ್ಕಾರ. ಇದು ಭಾಷಣ ಸಂಶ್ಲೇಷಣೆ ಗುಣಮಟ್ಟದ ಪರೀಕ್ಷೆ. ಧ್ವನಿ ಸ್ಪಷ್ಟವಾಗಿದೆಯೇ?"
+        "Kannada": "ನಮಸ್ಕಾರ. ಇದು ಭಾಷಣ ಸಂಶ್ಲೇಷಣೆ ಗುಣಮಟ್ಟದ ಪರೀಕ್ಷೆ. ಧ್ವನಿ ಸ್ಪಷ್ಟವಾಗಿದೆಯೇ?",
+        "Marathi": "नमस्कार. हे भाषण संश्लेषण गुणवत्तेची एक चाचणी आहे. आवाज स्पष्ट आहे का?",
+        "Punjabi": "ਸਤ ਸ੍ਰੀ ਅਕਾਲ. ਇਹ ਭਾਸ਼ਣ ਸੰਸ਼ਲੇਸ਼ਣ ਗੁਣਵੱਤਾ ਦੀ ਇੱਕ ਟੈਸਟ ਹੈ. ਆਵਾਜ਼ ਸਪੱਸ਼ਟ ਹੈ?",
+        "Bengali": "নমস্কার। এটি বক্তৃতা সংশ্লেষণ মানের একটি পরীক্ষা। কণ্ঠস্বর কি স্পষ্ট?",
+        "English-India": "Hello. This is a test of speech synthesis quality. Is the voice clear?",
+        "Hindi": "नमस्ते। यह भाषण संश्लेषण गुणवत्ता का एक परीक्षण है। आवाज़ स्पष्ट है?"
     }
     
     # Language selection with auto-update
     language = st.selectbox(
         "Select Language:",
-        ["Tamil", "Telugu", "Kannada"],
+        ["Tamil", "Telugu", "Kannada", "Marathi", "Punjabi", "Bengali", "English-India", "Hindi"],
         key="language_selector"
     )
     
@@ -261,7 +266,7 @@ def generate_blind_test_samples(text: str, providers: List[str], language: str):
     # Map language to appropriate voices and providers
     language_voice_map = {
         "Tamil": {
-            "murf_falcon_oct23": ["Murali", "Alicia"],
+            "murf_falcon_oct23": ["Murali"],
             "elevenlabs": ["Rachel"]  # English voice, but will try
         },
         "Telugu": {
@@ -271,6 +276,26 @@ def generate_blind_test_samples(text: str, providers: List[str], language: str):
         "Kannada": {
             "murf_falcon_oct23": ["Julia", "Maverick", "Rajesh"],
             "elevenlabs": ["Domi"]  # English voice, but will try
+        },
+        "Marathi": {
+            "murf_falcon_oct23": ["Alicia"],
+            "elevenlabs": ["Rachel"]  # English voice, but will try
+        },
+        "Punjabi": {
+            "murf_falcon_oct23": ["Harman"],
+            "elevenlabs": ["Rachel"]  # English voice, but will try
+        },
+        "Bengali": {
+            "murf_falcon_oct23": ["Abhik"],
+            "elevenlabs": ["Rachel"]  # English voice, but will try
+        },
+        "English-India": {
+            "murf_falcon_oct23": ["Anisha"],
+            "elevenlabs": ["Rachel"]  # English voice, but will try
+        },
+        "Hindi": {
+            "murf_falcon_oct23": ["Aman"],
+            "elevenlabs": ["Rachel"]  # English voice, but will try
         }
     }
     

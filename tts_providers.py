@@ -551,13 +551,17 @@ class MurfFalconOct23TTSProvider(TTSProvider):
         
         # Map voices to their locales
         voice_locale_map = {
-            "Alicia": "ta-IN",
-            "Murali": "ta-IN",
-            "Josie": "te-IN",
-            "Ronnie": "te-IN",
-            "Julia": "kn-IN",
-            "Maverick": "kn-IN",
-            "Rajesh": "kn-IN"
+            "Alicia": "mr-IN",      # Marathi (India)
+            "Murali": "ta-IN",      # Tamil (India)
+            "Josie": "te-IN",       # Telugu (India)
+            "Ronnie": "te-IN",      # Telugu (India)
+            "Julia": "kn-IN",       # Kannada (India)
+            "Maverick": "kn-IN",    # Kannada (India)
+            "Rajesh": "kn-IN",      # Kannada (India)
+            "Harman": "pa-IN",      # Punjabi (India)
+            "Abhik": "bn-IN",       # Bengali (India)
+            "Anisha": "en-IN",      # English (India)
+            "Aman": "hi-IN"         # Hindi (India)
         }
         
         # Get locale for the voice, default to en-US

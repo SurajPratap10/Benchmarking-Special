@@ -23,13 +23,17 @@ TTS_PROVIDERS = {
         api_key_env="MURF_API_KEY",
         base_url="https://global.api.murf.ai/v1/speech/stream",
         supported_voices=[
-            "Alicia",      # Tamil (ta-IN)
+            "Alicia",      # Marathi (mr-IN)
             "Murali",      # Tamil (ta-IN)
             "Josie",       # Telugu (te-IN)
             "Ronnie",      # Telugu (te-IN)
             "Julia",       # Kannada (kn-IN)
             "Maverick",    # Kannada (kn-IN)
-            "Rajesh"       # Kannada (kn-IN)
+            "Rajesh",      # Kannada (kn-IN)
+            "Harman",      # Punjabi (pa-IN)
+            "Abhik",       # Bengali (bn-IN)
+            "Anisha",      # English-India (en-IN)
+            "Aman"         # Hindi (hi-IN)
         ],
         max_chars=5000,  # Increased to support longer multilingual text
         supports_streaming=True,
