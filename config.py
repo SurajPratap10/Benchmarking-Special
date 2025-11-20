@@ -19,7 +19,7 @@ class TTSConfig:
 # TTS Provider Configurations
 TTS_PROVIDERS = {
     "murf_falcon_oct23": TTSConfig(
-        name="Murf (Falcon)",
+        name="Murf Falcon",
         api_key_env="MURF_API_KEY",
         base_url="https://global.api.murf.ai/v1/speech/stream",
         supported_voices=[
