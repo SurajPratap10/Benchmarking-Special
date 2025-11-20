@@ -846,7 +846,6 @@ def display_blind_test_samples():
                 "Provider": result.provider.title(),
                 "Model": result.model_name,
                 "Location": get_location_display(result),
-                "File Size (KB)": f"{result.file_size_bytes / 1024:.1f}",
                 "Your Choice": "WINNER" if is_winner else ""
             })
         
