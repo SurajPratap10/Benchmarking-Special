@@ -261,28 +261,29 @@ def blind_test_page():
         selected_providers = configured_providers
         st.info(f"Comparing all {len(configured_providers)} providers: {', '.join([provider_display_names[p] for p in selected_providers])}")
     elif num_providers_to_compare == "2" and len(configured_providers) >= 2:
-        # Let user select 2 providers
-        provider_options = [f"{provider_display_names[p]} ({p})" for p in configured_providers]
+        # Let user select 2 providers - show only display names
+        provider_options = [provider_display_names[p] for p in configured_providers]
+        provider_id_map = {provider_display_names[p]: p for p in configured_providers}
         
         col1, col2 = st.columns(2)
         with col1:
-            provider1 = st.selectbox(
+            provider1_name = st.selectbox(
                 "Select Provider 1:",
                 provider_options,
                 key="provider1_select"
             )
         with col2:
             # Filter out provider1 from provider2 options
-            provider2_options = [p for p in provider_options if p != provider1]
-            provider2 = st.selectbox(
+            provider2_options = [p for p in provider_options if p != provider1_name]
+            provider2_name = st.selectbox(
                 "Select Provider 2:",
                 provider2_options,
                 key="provider2_select"
             )
         
-        # Extract provider IDs from selections
-        provider1_id = provider1.split("(")[1].rstrip(")")
-        provider2_id = provider2.split("(")[1].rstrip(")")
+        # Map display names back to provider IDs
+        provider1_id = provider_id_map[provider1_name]
+        provider2_id = provider_id_map[provider2_name]
         selected_providers = [provider1_id, provider2_id]
     else:
         # Only one provider available
