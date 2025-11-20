@@ -121,7 +121,8 @@ def create_leaderboard_chart(leaderboard: List[Dict[str, Any]]) -> go.Figure:
         xaxis_title="Ranking",
         yaxis_title="Provider",
         height=max(300, len(providers) * 50),
-        yaxis=dict(categoryorder="total ascending")
+        yaxis=dict(categoryorder="total ascending"),
+        xaxis=dict(showticklabels=False)
     )
     
     return fig
