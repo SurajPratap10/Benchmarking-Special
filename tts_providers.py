@@ -574,7 +574,8 @@ class MurfFalconOct23TTSProvider(TTSProvider):
             "locale": locale,
             "audioFormat": "MP3",
             "sampleRate": 24000,
-            "model": "FALCON"
+            "model": "FALCON",
+            "channelType": "MONO"
         }
         
         # Add speed/rate if specified
