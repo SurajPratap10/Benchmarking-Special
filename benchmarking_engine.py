@@ -377,10 +377,10 @@ class BenchmarkEngine:
             db.update_elo_ratings(provider_b, provider_a, BENCHMARK_CONFIG["elo_k_factor"])
         # For ties (score == 0.5), we don't update ELO ratings
     
-    def get_leaderboard(self) -> List[Dict[str, Any]]:
-        """Get current ELO leaderboard from database"""
+    def get_leaderboard(self, language: str = "all") -> List[Dict[str, Any]]:
+        """Get current ELO leaderboard from database for a specific language"""
         
-        elo_ratings = db.get_all_elo_ratings()
+        elo_ratings = db.get_all_elo_ratings(language)
         
         leaderboard = []
         for provider, data in sorted(elo_ratings.items(), key=lambda x: x[1]['rating'], reverse=True):

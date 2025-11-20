@@ -388,6 +388,7 @@ def generate_blind_test_samples(text: str, providers: List[str], language: str):
     
     # Store samples in session state
     st.session_state.blind_test_samples = results
+    st.session_state.blind_test_language = language  # Store language for vote tracking
     st.session_state.blind_test_voted = False
     st.session_state.blind_test_vote_choice = None
     
@@ -452,16 +453,19 @@ def display_blind_test_samples():
             # Find the winning sample
             winner_result = next(r for r in samples if r.blind_label == selected_label)
             
+            # Get language from session state
+            language = st.session_state.get("blind_test_language", "all")
+            
             # Update ELO ratings - winner beats all others (but only count as one vote)
             # We'll update ELO ratings for all comparisons but only save one vote to database
             losers = [r for r in samples if r.blind_label != selected_label]
             if losers:
                 # Update ELO ratings for all comparisons
                 for loser_result in losers:
-                    handle_blind_test_vote(winner_result, loser_result, save_vote=False)
+                    handle_blind_test_vote(winner_result, loser_result, language, save_vote=False)
                 
                 # Save only one vote to database
-                handle_blind_test_vote(winner_result, losers[0], save_vote=True)
+                handle_blind_test_vote(winner_result, losers[0], language, save_vote=True)
             
             st.rerun()
     
@@ -552,19 +556,19 @@ def display_blind_test_samples():
                 st.session_state.current_page = "Leaderboard"
                 st.rerun()
 
-def handle_blind_test_vote(winner_result: BenchmarkResult, loser_result: BenchmarkResult, save_vote: bool = True):
-    """Handle blind test vote and update ELO ratings"""
+def handle_blind_test_vote(winner_result: BenchmarkResult, loser_result: BenchmarkResult, language: str = "all", save_vote: bool = True):
+    """Handle blind test vote and update ELO ratings for a specific language"""
     
     from database import db
     
     try:
-        # Get current ratings
-        winner_rating_before = db.get_elo_rating(winner_result.provider)
-        loser_rating_before = db.get_elo_rating(loser_result.provider)
+        # Get current ratings for this language
+        winner_rating_before = db.get_elo_rating(winner_result.provider, language)
+        loser_rating_before = db.get_elo_rating(loser_result.provider, language)
         
-        # Update ratings
+        # Update ratings for this language
         new_winner_rating, new_loser_rating = db.update_elo_ratings(
-            winner_result.provider, loser_result.provider, k_factor=32
+            winner_result.provider, loser_result.provider, k_factor=32, language=language
         )
         
         # Save the vote in database only if requested
@@ -573,23 +577,46 @@ def handle_blind_test_vote(winner_result: BenchmarkResult, loser_result: Benchma
                 winner_result.provider, 
                 loser_result.provider, 
                 winner_result.text[:100] + "..." if len(winner_result.text) > 100 else winner_result.text,
-                session_id="blind_test_session"
+                session_id="blind_test_session",
+                language=language
             )
         
     except Exception as e:
         st.error(f"Error updating ratings: {e}")
 
 def leaderboard_page():
-    """ELO leaderboard page with persistent data"""
+    """ELO leaderboard page with persistent data, broken down by language"""
     
     st.header("Leaderboard")
-    st.markdown("ELO-based rankings of TTS providers")
+    st.markdown("ELO-based rankings of TTS providers by language")
     
-    # Get persistent leaderboard data
-    leaderboard = st.session_state.benchmark_engine.get_leaderboard()
+    # Language selection for leaderboard
+    available_languages = ["all", "Tamil", "Telugu", "Kannada", "Marathi", "Punjabi", "Bengali", "English-India", "Hindi"]
+    
+    # Get languages that have data from database
+    try:
+        db_languages = db.get_available_languages()
+        # Merge with available languages, prioritizing those with data
+        if db_languages:
+            available_languages = db_languages + [lang for lang in available_languages if lang not in db_languages]
+    except:
+        pass
+    
+    selected_language = st.selectbox(
+        "Filter by Language:",
+        available_languages,
+        key="leaderboard_language_filter",
+        help="Select a language to see rankings for that language only, or 'all' to see combined rankings"
+    )
+    
+    # Get persistent leaderboard data for selected language
+    leaderboard = st.session_state.benchmark_engine.get_leaderboard(selected_language)
     
     if not leaderboard:
-        st.info("No leaderboard data available. Run benchmarks to generate rankings.")
+        if selected_language == "all":
+            st.info("No leaderboard data available. Run benchmarks to generate rankings.")
+        else:
+            st.info(f"No leaderboard data available for {selected_language}. Run benchmarks with this language to generate rankings.")
         return
     
     # Display leaderboard chart
@@ -620,12 +647,20 @@ def leaderboard_page():
         "games_played", "wins", "losses", "win_rate"
     ]].copy()
     
+    # Ensure numeric types before division
+    display_df["games_played"] = pd.to_numeric(display_df["games_played"], errors='coerce').fillna(0)
+    display_df["wins"] = pd.to_numeric(display_df["wins"], errors='coerce').fillna(0)
+    display_df["losses"] = pd.to_numeric(display_df["losses"], errors='coerce').fillna(0)
+    
     # Convert games_played, wins, and losses to actual test count
     # Each blind test involves 2 providers, and each vote increments counts for both
     # So we divide by 2 to get the actual number of tests
     display_df["Total Tests"] = (display_df["games_played"] / 2).astype(int)
     display_df["Wins"] = (display_df["wins"] / 2).astype(int)
     display_df["Losses"] = (display_df["losses"] / 2).astype(int)
+    
+    # Ensure win_rate is numeric
+    display_df["win_rate"] = pd.to_numeric(display_df["win_rate"], errors='coerce').fillna(0.0)
     
     display_df = display_df[[
         "rank", "Provider", "Model", "Location",
@@ -637,11 +672,14 @@ def leaderboard_page():
         "Total Tests", "Wins", "Losses", "Win Rate %"
     ]
     
+    # Format win_rate as percentage string for display
+    display_df["Win Rate %"] = display_df["Win Rate %"].apply(lambda x: f"{x:.1f}%")
+    
     st.dataframe(display_df, use_container_width=True, hide_index=True)
     
-    # User voting statistics
-    st.subheader("User Voting Statistics")
-    vote_stats = db.get_vote_statistics()
+    # User voting statistics for selected language
+    st.subheader(f"User Voting Statistics{' - ' + selected_language if selected_language != 'all' else ''}")
+    vote_stats = db.get_vote_statistics(selected_language)
     
     if vote_stats['total_votes'] > 0:
         st.metric("Total User Votes", vote_stats['total_votes'])

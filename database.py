@@ -74,14 +74,24 @@ class BenchmarkDatabase:
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS elo_ratings (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                provider TEXT UNIQUE,
+                provider TEXT,
+                language TEXT DEFAULT 'all',
                 rating REAL DEFAULT 1500,
                 games_played INTEGER DEFAULT 0,
                 wins INTEGER DEFAULT 0,
                 losses INTEGER DEFAULT 0,
-                last_updated DATETIME
+                last_updated DATETIME,
+                UNIQUE(provider, language)
             )
         ''')
+        
+        # Add language column to existing elo_ratings table if it doesn't exist
+        try:
+            cursor.execute('ALTER TABLE elo_ratings ADD COLUMN language TEXT DEFAULT "all"')
+            # Migrate existing data to have language='all'
+            cursor.execute('UPDATE elo_ratings SET language = "all" WHERE language IS NULL')
+        except:
+            pass
         
         # Create provider statistics table
         cursor.execute('''
@@ -118,10 +128,17 @@ class BenchmarkDatabase:
                 vote_type TEXT,
                 text_sample TEXT,
                 session_id TEXT,
+                language TEXT,
                 timestamp DATETIME,
                 metadata TEXT
             )
         ''')
+        
+        # Add language column to existing user_votes table if it doesn't exist
+        try:
+            cursor.execute('ALTER TABLE user_votes ADD COLUMN language TEXT')
+        except:
+            pass
         
         conn.commit()
         conn.close()
@@ -210,12 +227,12 @@ class BenchmarkDatabase:
         conn.commit()
         conn.close()
     
-    def get_elo_rating(self, provider: str) -> float:
-        """Get ELO rating for a provider"""
+    def get_elo_rating(self, provider: str, language: str = "all") -> float:
+        """Get ELO rating for a provider for a specific language"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        cursor.execute('SELECT rating FROM elo_ratings WHERE provider = ?', (provider,))
+        cursor.execute('SELECT rating FROM elo_ratings WHERE provider = ? AND language = ?', (provider, language))
         result = cursor.fetchone()
         
         conn.close()
@@ -223,28 +240,28 @@ class BenchmarkDatabase:
         if result:
             return result[0]
         else:
-            # Initialize new provider with default rating
-            self.init_elo_rating(provider)
+            # Initialize new provider with default rating for this language
+            self.init_elo_rating(provider, language=language)
             return 1500.0
     
-    def init_elo_rating(self, provider: str, rating: float = 1500.0):
-        """Initialize ELO rating for a new provider"""
+    def init_elo_rating(self, provider: str, rating: float = 1500.0, language: str = "all"):
+        """Initialize ELO rating for a new provider for a specific language"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
         cursor.execute('''
             INSERT OR IGNORE INTO elo_ratings 
-            (provider, rating, games_played, wins, losses, last_updated)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (provider, rating, 0, 0, 0, datetime.now()))
+            (provider, language, rating, games_played, wins, losses, last_updated)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (provider, language, rating, 0, 0, 0, datetime.now()))
         
         conn.commit()
         conn.close()
     
-    def update_elo_ratings(self, winner: str, loser: str, k_factor: int = 32):
-        """Update ELO ratings after a comparison"""
-        winner_rating = self.get_elo_rating(winner)
-        loser_rating = self.get_elo_rating(loser)
+    def update_elo_ratings(self, winner: str, loser: str, k_factor: int = 32, language: str = "all"):
+        """Update ELO ratings after a comparison for a specific language"""
+        winner_rating = self.get_elo_rating(winner, language)
+        loser_rating = self.get_elo_rating(loser, language)
         
         # Calculate expected scores
         expected_winner = 1 / (1 + 10**((loser_rating - winner_rating) / 400))
@@ -262,43 +279,85 @@ class BenchmarkDatabase:
         cursor.execute('''
             UPDATE elo_ratings 
             SET rating = ?, games_played = games_played + 1, wins = wins + 1, last_updated = ?
-            WHERE provider = ?
-        ''', (new_winner_rating, datetime.now(), winner))
+            WHERE provider = ? AND language = ?
+        ''', (new_winner_rating, datetime.now(), winner, language))
         
         # Update loser
         cursor.execute('''
             UPDATE elo_ratings 
             SET rating = ?, games_played = games_played + 1, losses = losses + 1, last_updated = ?
-            WHERE provider = ?
-        ''', (new_loser_rating, datetime.now(), loser))
+            WHERE provider = ? AND language = ?
+        ''', (new_loser_rating, datetime.now(), loser, language))
         
         conn.commit()
         conn.close()
         
         return new_winner_rating, new_loser_rating
     
-    def get_all_elo_ratings(self) -> Dict[str, Dict]:
-        """Get all ELO ratings"""
+    def get_all_elo_ratings(self, language: str = "all") -> Dict[str, Dict]:
+        """Get all ELO ratings for a specific language"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        cursor.execute('SELECT * FROM elo_ratings ORDER BY rating DESC')
+        # Query specific columns by name to avoid index issues
+        cursor.execute('''
+            SELECT provider, rating, games_played, wins, losses, last_updated 
+            FROM elo_ratings 
+            WHERE language = ? 
+            ORDER BY rating DESC
+        ''', (language,))
         results = cursor.fetchall()
         
         conn.close()
         
         ratings = {}
         for row in results:
-            ratings[row[1]] = {
-                'rating': row[2],
-                'games_played': row[3],
-                'wins': row[4],
-                'losses': row[5],
-                'win_rate': (row[4] / row[3] * 100) if row[3] > 0 else 0,
-                'last_updated': row[6]
+            # Column order: provider, rating, games_played, wins, losses, last_updated
+            provider = row[0]
+            # Ensure numeric conversion with safe handling
+            try:
+                rating = float(row[1]) if row[1] is not None else 1500.0
+            except (ValueError, TypeError):
+                rating = 1500.0
+                
+            try:
+                games_played = float(row[2]) if row[2] is not None else 0.0
+            except (ValueError, TypeError):
+                games_played = 0.0
+                
+            try:
+                wins = float(row[3]) if row[3] is not None else 0.0
+            except (ValueError, TypeError):
+                wins = 0.0
+                
+            try:
+                losses = float(row[4]) if row[4] is not None else 0.0
+            except (ValueError, TypeError):
+                losses = 0.0
+            
+            ratings[provider] = {
+                'rating': rating,
+                'games_played': games_played,
+                'wins': wins,
+                'losses': losses,
+                'win_rate': (wins / games_played * 100) if games_played > 0 else 0.0,
+                'last_updated': row[5] if len(row) > 5 else None
             }
         
         return ratings
+    
+    def get_available_languages(self) -> List[str]:
+        """Get list of languages that have ELO ratings"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT DISTINCT language FROM elo_ratings ORDER BY language')
+        results = cursor.fetchall()
+        
+        conn.close()
+        
+        languages = [row[0] for row in results if row[0]]
+        return languages if languages else ["all"]
     
     def get_provider_stats(self) -> Dict[str, Dict]:
         """Get all provider statistics"""
@@ -387,44 +446,65 @@ class BenchmarkDatabase:
         
         return filename
     
-    def save_user_vote(self, winner: str, loser: str, text_sample: str, session_id: str = "default"):
-        """Save a user preference vote"""
+    def save_user_vote(self, winner: str, loser: str, text_sample: str, session_id: str = "default", language: str = "all"):
+        """Save a user preference vote with language information"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
         cursor.execute('''
             INSERT INTO user_votes 
-            (winner, loser, vote_type, text_sample, session_id, timestamp, metadata)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            (winner, loser, vote_type, text_sample, session_id, language, timestamp, metadata)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            winner, loser, 'user_preference', text_sample, session_id,
+            winner, loser, 'user_preference', text_sample, session_id, language,
             datetime.now(), json.dumps({'vote_source': 'quick_test'})
         ))
         
         conn.commit()
         conn.close()
     
-    def get_vote_statistics(self) -> Dict[str, Any]:
-        """Get voting statistics"""
+    def get_vote_statistics(self, language: str = "all") -> Dict[str, Any]:
+        """Get voting statistics for a specific language"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        # Get total votes per provider
-        cursor.execute('''
-            SELECT winner, COUNT(*) as wins FROM user_votes GROUP BY winner
-        ''')
-        wins = dict(cursor.fetchall())
+        if language == "all":
+            # Get total votes per provider across all languages
+            cursor.execute('''
+                SELECT winner, COUNT(*) as wins FROM user_votes GROUP BY winner
+            ''')
+            wins = dict(cursor.fetchall())
+            
+            cursor.execute('''
+                SELECT loser, COUNT(*) as losses FROM user_votes GROUP BY loser  
+            ''')
+            losses = dict(cursor.fetchall())
+            
+            # Get recent votes
+            cursor.execute('''
+                SELECT winner, loser, timestamp FROM user_votes 
+                ORDER BY timestamp DESC LIMIT 10
+            ''')
+        else:
+            # Get votes filtered by language
+            cursor.execute('''
+                SELECT winner, COUNT(*) as wins FROM user_votes 
+                WHERE language = ? GROUP BY winner
+            ''', (language,))
+            wins = dict(cursor.fetchall())
+            
+            cursor.execute('''
+                SELECT loser, COUNT(*) as losses FROM user_votes 
+                WHERE language = ? GROUP BY loser
+            ''', (language,))
+            losses = dict(cursor.fetchall())
+            
+            # Get recent votes for this language
+            cursor.execute('''
+                SELECT winner, loser, timestamp FROM user_votes 
+                WHERE language = ? ORDER BY timestamp DESC LIMIT 10
+            ''', (language,))
         
-        cursor.execute('''
-            SELECT loser, COUNT(*) as losses FROM user_votes GROUP BY loser  
-        ''')
-        losses = dict(cursor.fetchall())
-        
-        # Get recent votes
-        cursor.execute('''
-            SELECT winner, loser, timestamp FROM user_votes 
-            ORDER BY timestamp DESC LIMIT 10
-        ''')
         recent_votes = cursor.fetchall()
         
         conn.close()
