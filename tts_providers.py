@@ -1396,6 +1396,8 @@ class TTSProviderFactory:
             return MurfFalconOct23TTSProvider()
         elif provider_id == "elevenlabs":
             return ElevenLabsTTSProvider()
+        elif provider_id == "cartesia_sonic3":
+            return CartesiaSonic3Provider()
         else:
             raise ValueError(f"Unknown provider: {provider_id}")
     

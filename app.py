@@ -237,17 +237,71 @@ def blind_test_page():
     
     st.write("")  # Add spacing
     
+    # Provider selection for blind test
+    st.subheader("Provider Selection")
+    
+    # Get provider display names
+    provider_display_names = {
+        provider_id: TTS_PROVIDERS[provider_id].name 
+        for provider_id in configured_providers
+    }
+    
+    # Determine number of providers to compare
+    num_providers_to_compare = st.radio(
+        "Number of providers to compare:",
+        ["2", "All 3"] if len(configured_providers) >= 3 else ["2"] if len(configured_providers) >= 2 else ["1"],
+        key="num_providers_radio",
+        horizontal=True
+    )
+    
+    # Select which providers to compare
+    selected_providers = []
+    if num_providers_to_compare == "All 3" and len(configured_providers) >= 3:
+        # Use all configured providers
+        selected_providers = configured_providers
+        st.info(f"Comparing all {len(configured_providers)} providers: {', '.join([provider_display_names[p] for p in selected_providers])}")
+    elif num_providers_to_compare == "2" and len(configured_providers) >= 2:
+        # Let user select 2 providers
+        provider_options = [f"{provider_display_names[p]} ({p})" for p in configured_providers]
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            provider1 = st.selectbox(
+                "Select Provider 1:",
+                provider_options,
+                key="provider1_select"
+            )
+        with col2:
+            # Filter out provider1 from provider2 options
+            provider2_options = [p for p in provider_options if p != provider1]
+            provider2 = st.selectbox(
+                "Select Provider 2:",
+                provider2_options,
+                key="provider2_select"
+            )
+        
+        # Extract provider IDs from selections
+        provider1_id = provider1.split("(")[1].rstrip(")")
+        provider2_id = provider2.split("(")[1].rstrip(")")
+        selected_providers = [provider1_id, provider2_id]
+    else:
+        # Only one provider available
+        selected_providers = configured_providers
+        st.info(f"Only 1 provider configured: {provider_display_names[configured_providers[0]]}")
+    
+    st.write("")  # Add spacing
+    
     # Generate blind test samples
     if st.button("Generate Blind Test", type="primary"):
-        if text_input and len(configured_providers) >= 1:
+        if text_input and len(selected_providers) >= 1:
             # Validate input
             valid, error_msg = session_manager.validate_request(text_input)
             if valid:
-                generate_blind_test_samples(text_input, configured_providers, language)
+                generate_blind_test_samples(text_input, selected_providers, language)
             else:
                 st.error(f"ERROR: {error_msg}")
         else:
-            st.error("Please enter text and ensure at least 1 provider is configured.")
+            st.error("Please enter text and ensure at least 1 provider is selected.")
     
     # Display blind test samples if available
     if st.session_state.blind_test_samples:
@@ -267,35 +321,43 @@ def generate_blind_test_samples(text: str, providers: List[str], language: str):
     language_voice_map = {
         "Tamil": {
             "murf_falcon_oct23": ["Murali"],
-            "elevenlabs": ["Rachel"]  # English voice, but will try
+            "elevenlabs": ["Rachel"],  # English voice, but will try
+            "cartesia_sonic3": ["Conversational Lady"]  # English voice, but will try
         },
         "Telugu": {
             "murf_falcon_oct23": ["Josie", "Ronnie"],
-            "elevenlabs": ["Bella"]  # English voice, but will try
+            "elevenlabs": ["Bella"],  # English voice, but will try
+            "cartesia_sonic3": ["Conversational Lady"]  # English voice, but will try
         },
         "Kannada": {
             "murf_falcon_oct23": ["Julia", "Maverick", "Rajesh"],
-            "elevenlabs": ["Domi"]  # English voice, but will try
+            "elevenlabs": ["Domi"],  # English voice, but will try
+            "cartesia_sonic3": ["Conversational Lady"]  # English voice, but will try
         },
         "Marathi": {
             "murf_falcon_oct23": ["Alicia"],
-            "elevenlabs": ["Rachel"]  # English voice, but will try
+            "elevenlabs": ["Rachel"],  # English voice, but will try
+            "cartesia_sonic3": ["Conversational Lady"]  # English voice, but will try
         },
         "Punjabi": {
             "murf_falcon_oct23": ["Harman"],
-            "elevenlabs": ["Rachel"]  # English voice, but will try
+            "elevenlabs": ["Rachel"],  # English voice, but will try
+            "cartesia_sonic3": ["Conversational Lady"]  # English voice, but will try
         },
         "Bengali": {
             "murf_falcon_oct23": ["Abhik"],
-            "elevenlabs": ["Rachel"]  # English voice, but will try
+            "elevenlabs": ["Rachel"],  # English voice, but will try
+            "cartesia_sonic3": ["Conversational Lady"]  # English voice, but will try
         },
         "English-India": {
             "murf_falcon_oct23": ["Anisha"],
-            "elevenlabs": ["Rachel"]  # English voice, but will try
+            "elevenlabs": ["Rachel"],  # English voice, but will try
+            "cartesia_sonic3": ["Conversational Lady"]  # English voice, but will try
         },
         "Hindi": {
             "murf_falcon_oct23": ["Aman"],
-            "elevenlabs": ["Rachel"]  # English voice, but will try
+            "elevenlabs": ["Rachel"],  # English voice, but will try
+            "cartesia_sonic3": ["Conversational Lady"]  # English voice, but will try
         }
     }
     
