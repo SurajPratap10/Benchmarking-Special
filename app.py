@@ -591,11 +591,14 @@ def leaderboard_page():
     st.markdown("ELO-based rankings of TTS providers by language")
     
     # Language selection for leaderboard
-    available_languages = ["all", "Tamil", "Telugu", "Kannada", "Marathi", "Punjabi", "Bengali", "English-India", "Hindi"]
+    available_languages = ["All Languages", "Tamil", "Telugu", "Kannada", "Marathi", "Punjabi", "Bengali", "English-India", "Hindi"]
     
     # Get languages that have data from database
     try:
         db_languages = db.get_available_languages()
+        # Convert "all" to "All Languages" if present
+        if "all" in db_languages:
+            db_languages = [lang if lang != "all" else "All Languages" for lang in db_languages]
         # Merge with available languages, prioritizing those with data
         if db_languages:
             available_languages = db_languages + [lang for lang in available_languages if lang not in db_languages]
@@ -606,14 +609,25 @@ def leaderboard_page():
         "Filter by Language:",
         available_languages,
         key="leaderboard_language_filter",
-        help="Select a language to see rankings for that language only, or 'all' to see combined rankings"
+        help="Select a language to see rankings for that language only, or 'All Languages' to see combined rankings"
     )
     
+    # Convert "All Languages" back to "all" for database query
+    db_language = "all" if selected_language == "All Languages" else selected_language
+    
     # Get persistent leaderboard data for selected language
-    leaderboard = st.session_state.benchmark_engine.get_leaderboard(selected_language)
+    leaderboard = st.session_state.benchmark_engine.get_leaderboard(db_language)
+    
+    # If no data for specific language, fall back to "all" and show a message
+    showing_fallback = False
+    if not leaderboard and selected_language != "All Languages":
+        leaderboard = st.session_state.benchmark_engine.get_leaderboard("all")
+        if leaderboard:
+            showing_fallback = True
+            st.info(f"ℹ️ No separate rankings available for {selected_language} yet. Showing combined rankings from all languages. Run blind tests with {selected_language} to generate language-specific rankings.")
     
     if not leaderboard:
-        if selected_language == "all":
+        if selected_language == "All Languages":
             st.info("No leaderboard data available. Run benchmarks to generate rankings.")
         else:
             st.info(f"No leaderboard data available for {selected_language}. Run benchmarks with this language to generate rankings.")
@@ -678,8 +692,8 @@ def leaderboard_page():
     st.dataframe(display_df, use_container_width=True, hide_index=True)
     
     # User voting statistics for selected language
-    st.subheader(f"User Voting Statistics{' - ' + selected_language if selected_language != 'all' else ''}")
-    vote_stats = db.get_vote_statistics(selected_language)
+    st.subheader(f"User Voting Statistics{' - ' + selected_language if selected_language != 'All Languages' else ''}")
+    vote_stats = db.get_vote_statistics(db_language)
     
     if vote_stats['total_votes'] > 0:
         st.metric("Total User Votes", vote_stats['total_votes'])

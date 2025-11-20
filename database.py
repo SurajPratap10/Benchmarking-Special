@@ -295,45 +295,82 @@ class BenchmarkDatabase:
         return new_winner_rating, new_loser_rating
     
     def get_all_elo_ratings(self, language: str = "all") -> Dict[str, Dict]:
-        """Get all ELO ratings for a specific language"""
+        """Get all ELO ratings for a specific language, or aggregate across all languages if language='all'"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        # Query specific columns by name to avoid index issues
-        cursor.execute('''
-            SELECT provider, rating, games_played, wins, losses, last_updated 
-            FROM elo_ratings 
-            WHERE language = ? 
-            ORDER BY rating DESC
-        ''', (language,))
-        results = cursor.fetchall()
+        if language == "all":
+            # Aggregate across all languages - sum games_played, wins, losses, and calculate weighted average rating
+            cursor.execute('''
+                SELECT 
+                    provider,
+                    AVG(rating) as avg_rating,
+                    SUM(games_played) as total_games_played,
+                    SUM(wins) as total_wins,
+                    SUM(losses) as total_losses,
+                    MAX(last_updated) as last_updated
+                FROM elo_ratings 
+                GROUP BY provider
+                ORDER BY avg_rating DESC
+            ''')
+        else:
+            # Query specific columns by name for a specific language
+            cursor.execute('''
+                SELECT provider, rating, games_played, wins, losses, last_updated 
+                FROM elo_ratings 
+                WHERE language = ? 
+                ORDER BY rating DESC
+            ''', (language,))
         
+        results = cursor.fetchall()
         conn.close()
         
         ratings = {}
         for row in results:
-            # Column order: provider, rating, games_played, wins, losses, last_updated
-            provider = row[0]
-            # Ensure numeric conversion with safe handling
-            try:
-                rating = float(row[1]) if row[1] is not None else 1500.0
-            except (ValueError, TypeError):
-                rating = 1500.0
-                
-            try:
-                games_played = float(row[2]) if row[2] is not None else 0.0
-            except (ValueError, TypeError):
-                games_played = 0.0
-                
-            try:
-                wins = float(row[3]) if row[3] is not None else 0.0
-            except (ValueError, TypeError):
-                wins = 0.0
-                
-            try:
-                losses = float(row[4]) if row[4] is not None else 0.0
-            except (ValueError, TypeError):
-                losses = 0.0
+            if language == "all":
+                # Column order: provider, avg_rating, total_games_played, total_wins, total_losses, last_updated
+                provider = row[0]
+                try:
+                    rating = float(row[1]) if row[1] is not None else 1500.0
+                except (ValueError, TypeError):
+                    rating = 1500.0
+                    
+                try:
+                    games_played = float(row[2]) if row[2] is not None else 0.0
+                except (ValueError, TypeError):
+                    games_played = 0.0
+                    
+                try:
+                    wins = float(row[3]) if row[3] is not None else 0.0
+                except (ValueError, TypeError):
+                    wins = 0.0
+                    
+                try:
+                    losses = float(row[4]) if row[4] is not None else 0.0
+                except (ValueError, TypeError):
+                    losses = 0.0
+            else:
+                # Column order: provider, rating, games_played, wins, losses, last_updated
+                provider = row[0]
+                try:
+                    rating = float(row[1]) if row[1] is not None else 1500.0
+                except (ValueError, TypeError):
+                    rating = 1500.0
+                    
+                try:
+                    games_played = float(row[2]) if row[2] is not None else 0.0
+                except (ValueError, TypeError):
+                    games_played = 0.0
+                    
+                try:
+                    wins = float(row[3]) if row[3] is not None else 0.0
+                except (ValueError, TypeError):
+                    wins = 0.0
+                    
+                try:
+                    losses = float(row[4]) if row[4] is not None else 0.0
+                except (ValueError, TypeError):
+                    losses = 0.0
             
             ratings[provider] = {
                 'rating': rating,
@@ -451,6 +488,10 @@ class BenchmarkDatabase:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
+        # Ensure language is not None or empty
+        if not language or language.strip() == "":
+            language = "all"
+        
         cursor.execute('''
             INSERT INTO user_votes 
             (winner, loser, vote_type, text_sample, session_id, language, timestamp, metadata)
@@ -469,24 +510,29 @@ class BenchmarkDatabase:
         cursor = conn.cursor()
         
         if language == "all":
-            # Get total votes per provider across all languages
+            # Get total votes per provider across all languages (including NULL language as "all")
             cursor.execute('''
-                SELECT winner, COUNT(*) as wins FROM user_votes GROUP BY winner
+                SELECT winner, COUNT(*) as wins FROM user_votes 
+                WHERE language IS NULL OR language = 'all' OR language = ''
+                GROUP BY winner
             ''')
             wins = dict(cursor.fetchall())
             
             cursor.execute('''
-                SELECT loser, COUNT(*) as losses FROM user_votes GROUP BY loser  
+                SELECT loser, COUNT(*) as losses FROM user_votes 
+                WHERE language IS NULL OR language = 'all' OR language = ''
+                GROUP BY loser  
             ''')
             losses = dict(cursor.fetchall())
             
             # Get recent votes
             cursor.execute('''
                 SELECT winner, loser, timestamp FROM user_votes 
+                WHERE language IS NULL OR language = 'all' OR language = ''
                 ORDER BY timestamp DESC LIMIT 10
             ''')
         else:
-            # Get votes filtered by language
+            # Get votes filtered by language (also include NULL as "all" if querying "all")
             cursor.execute('''
                 SELECT winner, COUNT(*) as wins FROM user_votes 
                 WHERE language = ? GROUP BY winner
