@@ -10,9 +10,9 @@ Production-ready benchmarking tool for comparing Text-to-Speech (TTS) providers 
   - Tamil: Alicia, Murali
   - Telugu: Josie, Ronnie
   - Kannada: Julia, Maverick, Rajesh
-- **ELO Rating System**: Chess-style rankings for objective provider comparison
+- **Ranking System**: Chess-style rankings for objective provider comparison
 - **Blind Testing**: Unbiased audio quality comparison
-- **Leaderboard**: Track provider performance over time
+- **Leaderboard**: Track provider performance over time with clean, minimal UI
 - **Persistent Storage**: SQLite database for historical data
 - **Security**: Input validation for multilingual text (supports Indian scripts) 
 ## Quick Start
@@ -85,28 +85,34 @@ The application has two main screens:
 4. Listen to randomized audio samples (labeled A, B, etc.)
 5. Vote for your favorite audio quality
 6. Providers are revealed after voting
-7. ELO ratings automatically updated
+7. Rankings automatically updated
 
 **Features:**
 - Unbiased comparison (provider names hidden during voting)
 - Support for multilingual text input
-- Sample texts in all 5 languages
+- Sample texts in all 8 languages (Tamil, Telugu, Kannada, Marathi, Punjabi, Bengali, Hindi, English-India)
 - Character counter (up to 5000 characters)
 - Download MP3 files after results
+- Clean interface without distracting success messages
 
 ### 2. Leaderboard
-- View ELO-based rankings of TTS providers
-- See provider statistics (success rate, avg TTFB, P95 TTFB)
+- View rankings of TTS providers by language
+- Clean, minimal interface with hidden axis numbers
+- See provider statistics (wins, losses, win rate)
 - Track voting history and user preferences
 - Location-based metrics
 - Historical performance data
+- Filter by language for language-specific rankings
 
 **Supported Languages:**
-- Tamil (தமிழ்): Voices - Alicia, Murali
+- Tamil (தமிழ்): Voices - Murali
 - Telugu (తెలుగు): Voices - Josie, Ronnie  
 - Kannada (ಕನ್ನಡ): Voices - Julia, Maverick, Rajesh
-- Hindi (हिंदी): All voices support
-- English: All voices support
+- Marathi (मराठी): Voices - Alicia
+- Punjabi (ਪੰਜਾਬੀ): Voices - Harman
+- Bengali (বাংলা): Voices - Abhik
+- Hindi (हिंदी): Voices - Aman
+- English-India: Voices - Anisha
 
 ## Deployment
 
@@ -135,7 +141,7 @@ docker run -p 8501:8501 --env-file .env tts-benchmark
 
 - SQLite database (`benchmark_data.db`) stores:
   - Benchmark results with geolocation
-  - ELO ratings and game history
+  - Rankings and game history (by language)
   - Provider statistics
   - User voting data
 
