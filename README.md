@@ -10,7 +10,7 @@ Production-ready benchmarking tool for comparing Text-to-Speech (TTS) providers 
   - Tamil: Alicia, Murali
   - Telugu: Josie, Ronnie
   - Kannada: Julia, Maverick, Rajesh
-- **Ranking System**: Chess-style rankings for objective provider comparison
+- **Ranking System**: Rankings for objective provider comparison
 - **Blind Testing**: Unbiased audio quality comparison
 - **Leaderboard**: Track provider performance over time with clean, minimal UI
 - **Persistent Storage**: SQLite database for historical data
@@ -144,6 +144,22 @@ docker run -p 8501:8501 --env-file .env tts-benchmark
   - Rankings and game history (by language)
   - Provider statistics
   - User voting data
+
+### ⚠️ Important: Database Persistence on Streamlit Cloud
+
+**Streamlit Cloud uses an ephemeral filesystem** - files are deleted when the app restarts or redeploys. This means your SQLite database will reset daily or after each deployment.
+
+**Solutions for Persistent Storage:**
+
+1. **Use External Database (Recommended)**: Set up PostgreSQL, MySQL, or another cloud database:
+   - Set `DATABASE_PATH` environment variable to your database connection string
+   - Or modify `database.py` to use your external database library
+
+2. **Use Cloud Storage**: Store database file in cloud storage (S3, Google Cloud Storage) and sync on startup
+
+3. **Use Streamlit Secrets**: Store database connection info in Streamlit Cloud secrets
+
+**Quick Fix for Testing**: The database will work locally, but data will reset on Streamlit Cloud deployments.
 
 ## Performance
 

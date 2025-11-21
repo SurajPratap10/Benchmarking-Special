@@ -13,7 +13,16 @@ import pandas as pd
 class BenchmarkDatabase:
     """Database manager for benchmark results and ELO ratings"""
     
-    def __init__(self, db_path: str = "benchmark_data.db"):
+    def __init__(self, db_path: str = None):
+        # Use environment variable if set, otherwise use default
+        if db_path is None:
+            db_path = os.getenv("DATABASE_PATH", "benchmark_data.db")
+        
+        # Note: On Streamlit Cloud, the filesystem is ephemeral
+        # Database files will be reset on app restart/deployment
+        # For persistent storage, use an external database service
+        # See STREAMLIT_CLOUD_DEPLOYMENT.md for setup instructions
+        
         self.db_path = db_path
         self.init_database()
     
@@ -258,8 +267,16 @@ class BenchmarkDatabase:
         conn.commit()
         conn.close()
     
-    def update_elo_ratings(self, winner: str, loser: str, k_factor: int = 32, language: str = "all"):
-        """Update ELO ratings after a comparison for a specific language"""
+    def update_elo_ratings(self, winner: str, loser: str, k_factor: int = 32, language: str = "all", increment_games: bool = True):
+        """Update ELO ratings after a comparison for a specific language
+        
+        Args:
+            winner: Winning provider
+            loser: Losing provider
+            k_factor: ELO K-factor (default 32)
+            language: Language filter (default "all")
+            increment_games: Whether to increment games_played counter (default True)
+        """
         winner_rating = self.get_elo_rating(winner, language)
         loser_rating = self.get_elo_rating(loser, language)
         
@@ -275,24 +292,59 @@ class BenchmarkDatabase:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        # Update winner
-        cursor.execute('''
-            UPDATE elo_ratings 
-            SET rating = ?, games_played = games_played + 1, wins = wins + 1, last_updated = ?
-            WHERE provider = ? AND language = ?
-        ''', (new_winner_rating, datetime.now(), winner, language))
-        
-        # Update loser
-        cursor.execute('''
-            UPDATE elo_ratings 
-            SET rating = ?, games_played = games_played + 1, losses = losses + 1, last_updated = ?
-            WHERE provider = ? AND language = ?
-        ''', (new_loser_rating, datetime.now(), loser, language))
+        if increment_games:
+            # Update winner with game counter
+            cursor.execute('''
+                UPDATE elo_ratings 
+                SET rating = ?, games_played = games_played + 1, wins = wins + 1, last_updated = ?
+                WHERE provider = ? AND language = ?
+            ''', (new_winner_rating, datetime.now(), winner, language))
+            
+            # Update loser with game counter
+            cursor.execute('''
+                UPDATE elo_ratings 
+                SET rating = ?, games_played = games_played + 1, losses = losses + 1, last_updated = ?
+                WHERE provider = ? AND language = ?
+            ''', (new_loser_rating, datetime.now(), loser, language))
+        else:
+            # Update ratings only (for multi-provider comparisons where we count games separately)
+            cursor.execute('''
+                UPDATE elo_ratings 
+                SET rating = ?, last_updated = ?
+                WHERE provider = ? AND language = ?
+            ''', (new_winner_rating, datetime.now(), winner, language))
+            
+            cursor.execute('''
+                UPDATE elo_ratings 
+                SET rating = ?, last_updated = ?
+                WHERE provider = ? AND language = ?
+            ''', (new_loser_rating, datetime.now(), loser, language))
         
         conn.commit()
         conn.close()
         
         return new_winner_rating, new_loser_rating
+    
+    def increment_provider_games(self, provider: str, won: bool, language: str = "all"):
+        """Increment games_played counter for a provider (used for multi-provider tests)"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        if won:
+            cursor.execute('''
+                UPDATE elo_ratings 
+                SET games_played = games_played + 1, wins = wins + 1, last_updated = ?
+                WHERE provider = ? AND language = ?
+            ''', (datetime.now(), provider, language))
+        else:
+            cursor.execute('''
+                UPDATE elo_ratings 
+                SET games_played = games_played + 1, losses = losses + 1, last_updated = ?
+                WHERE provider = ? AND language = ?
+            ''', (datetime.now(), provider, language))
+        
+        conn.commit()
+        conn.close()
     
     def get_all_elo_ratings(self, language: str = "all") -> Dict[str, Dict]:
         """Get all ELO ratings for a specific language, or aggregate across all languages if language='all'"""

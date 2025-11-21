@@ -116,7 +116,7 @@ def main():
         st.divider()
         
         # Configuration
-        st.subheader("Configuration")
+        st.subheader("TTS Providers")
         
         # Check API configuration
         config_status = check_configuration()
@@ -465,7 +465,6 @@ def blind_test_page():
         ["Tamil", "Telugu", "Kannada", "Marathi", "Punjabi", "Bengali", "English-India", "Hindi"],
         key="language_selector"
     )
-    
     # Get random sentence for selected language
     import random
     sentences_for_language = language_sentences.get(language, language_sentences["Tamil"])
@@ -809,16 +808,23 @@ def display_blind_test_samples():
             # Get language from session state
             language = st.session_state.get("blind_test_language", "all")
             
-            # Update ELO ratings - winner beats all others (but only count as one vote)
-            # We'll update ELO ratings for all comparisons but only save one vote to database
+            # Update ELO ratings - winner beats all others
+            # For multi-provider tests, update ELO for all comparisons but count each provider only once
             losers = [r for r in samples if r.blind_label != selected_label]
             if losers:
-                # Update ELO ratings for all comparisons
+                # First, update ELO ratings for all comparisons (for rating accuracy)
+                # But don't increment games_played yet - we'll do that separately
                 for loser_result in losers:
-                    handle_blind_test_vote(winner_result, loser_result, language, save_vote=False)
+                    handle_blind_test_vote(winner_result, loser_result, language, save_vote=False, increment_games=False)
                 
-                # Save only one vote to database
-                handle_blind_test_vote(winner_result, losers[0], language, save_vote=True)
+                # Now increment games_played once per provider (each provider participated in 1 test)
+                # Winner won, all losers lost
+                db.increment_provider_games(winner_result.provider, won=True, language=language)
+                for loser_result in losers:
+                    db.increment_provider_games(loser_result.provider, won=False, language=language)
+                
+                # Save only one vote to database (for user voting statistics)
+                handle_blind_test_vote(winner_result, losers[0], language, save_vote=True, increment_games=False)
             
             st.rerun()
     
@@ -908,8 +914,16 @@ def display_blind_test_samples():
                 st.session_state.current_page = "Leaderboard"
                 st.rerun()
 
-def handle_blind_test_vote(winner_result: BenchmarkResult, loser_result: BenchmarkResult, language: str = "all", save_vote: bool = True):
-    """Handle blind test vote and update ELO ratings for a specific language"""
+def handle_blind_test_vote(winner_result: BenchmarkResult, loser_result: BenchmarkResult, language: str = "all", save_vote: bool = True, increment_games: bool = True):
+    """Handle blind test vote and update ELO ratings for a specific language
+    
+    Args:
+        winner_result: Winning provider result
+        loser_result: Losing provider result
+        language: Language filter
+        save_vote: Whether to save vote to database
+        increment_games: Whether to increment games_played (default True, set False for multi-provider tests)
+    """
     
     from database import db
     
@@ -920,7 +934,7 @@ def handle_blind_test_vote(winner_result: BenchmarkResult, loser_result: Benchma
         
         # Update ratings for this language
         new_winner_rating, new_loser_rating = db.update_elo_ratings(
-            winner_result.provider, loser_result.provider, k_factor=32, language=language
+            winner_result.provider, loser_result.provider, k_factor=32, language=language, increment_games=increment_games
         )
         
         # Save the vote in database only if requested
@@ -1017,17 +1031,16 @@ def leaderboard_page():
         "games_played", "wins", "losses", "win_rate"
     ]].copy()
     
-    # Ensure numeric types before division
+    # Ensure numeric types
     display_df["games_played"] = pd.to_numeric(display_df["games_played"], errors='coerce').fillna(0)
     display_df["wins"] = pd.to_numeric(display_df["wins"], errors='coerce').fillna(0)
     display_df["losses"] = pd.to_numeric(display_df["losses"], errors='coerce').fillna(0)
     
-    # Convert games_played, wins, and losses to actual test count
-    # Each blind test involves 2 providers, and each vote increments counts for both
-    # So we divide by 2 to get the actual number of tests
-    display_df["Total Tests"] = (display_df["games_played"] / 2).astype(int)
-    display_df["Wins"] = (display_df["wins"] / 2).astype(int)
-    display_df["Losses"] = (display_df["losses"] / 2).astype(int)
+    # Each provider already has correct count (1 per test they participated in)
+    # No division needed - games_played already represents the number of tests
+    display_df["Total Tests"] = display_df["games_played"].astype(int)
+    display_df["Wins"] = display_df["wins"].astype(int)
+    display_df["Losses"] = display_df["losses"].astype(int)
     
     # Ensure win_rate is numeric
     display_df["win_rate"] = pd.to_numeric(display_df["win_rate"], errors='coerce').fillna(0.0)
