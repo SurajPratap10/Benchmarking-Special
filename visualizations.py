@@ -110,7 +110,7 @@ def create_leaderboard_chart(leaderboard: List[Dict[str, Any]]) -> go.Figure:
             orientation='h',
             text=[f"#{rank}" for rank in ranks],
             textposition='inside',
-            hovertemplate="<b>%{y}</b><br>Ranking: %{x}<br>Rank: #%{customdata}<extra></extra>",
+            hovertemplate="<b>%{y}</b><br>Rankings: %{x}<br>Rank: #%{customdata}<extra></extra>",
             customdata=ranks,
             marker_color=px.colors.sequential.Viridis[:len(providers)]
         )
@@ -118,8 +118,8 @@ def create_leaderboard_chart(leaderboard: List[Dict[str, Any]]) -> go.Figure:
     
     fig.update_layout(
         title="Leaderboard",
-        xaxis_title="Ranking",
-        yaxis_title="Provider",
+        xaxis_title="Rankings",
+        yaxis_title="Providers",
         height=max(300, len(providers) * 50),
         yaxis=dict(categoryorder="total ascending"),
         xaxis=dict(showticklabels=False)
