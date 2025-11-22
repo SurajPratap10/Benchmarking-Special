@@ -40,7 +40,7 @@ TTS_PROVIDERS = {
         model_name="FALCON"
     ),
     "elevenlabs": TTSConfig(
-        name="ElevenLabs Flash",
+        name="ElevenLabs Flash 2.5",
         api_key_env="ELEVENLABS_API_KEY",
         base_url="https://api.elevenlabs.io/v1/text-to-speech",
         supported_voices=["Rachel", "Domi", "Bella", "Antoni", "Elli", "Josh", "Arnold", "Adam", "Sam"],
